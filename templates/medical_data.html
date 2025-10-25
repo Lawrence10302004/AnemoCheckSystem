@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - Medical Data{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Medical Profile Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                    </a>
+                </div>
+                <p class="text-muted mb-4">
+                    This information helps us provide more accurate recommendations. 
+                    Your data is kept private and secure.
+                </p>
+                
+                <form method="post" action="{{ url_for('medical_data') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row profile-section">
+                        <div class="col-md-12 mb-3">
+                            <h5 class="mb-3">Physical Measurements</h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.height.label(class="form-label") }}
+                            {{ form.height(class="form-control", placeholder="Enter your height in cm", autocomplete="off") }}
+                            {% if form.height.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.height.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Example: 175 cm</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.weight.label(class="form-label") }}
+                            {{ form.weight(class="form-control", placeholder="Enter your weight in kg", autocomplete="off") }}
+                            {% if form.weight.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.weight.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Example: 70 kg</div>
+                        </div>
+                        
+                        {% if medical_data and medical_data.height and medical_data.weight %}
+                            {% set bmi = (medical_data.weight / ((medical_data.height / 100) ** 2))|round(1) %}
+                            <div class="col-md-12 mb-4">
+                                <div class="alert alert-info">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="fas fa-calculator fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Body Mass Index (BMI)</h6>
+                                            <div class="d-flex align-items-center mb-1">
+                                                <div class="me-3">
+                                                    <span class="fs-4">{{ bmi }}</span>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="progress" style="height: 8px;">
+                                                        {% if bmi < 18.5 %}
+                                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ (bmi / 40 * 100)|round|int }}%"></div>
+                                                        {% elif bmi < 25 %}
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ (bmi / 40 * 100)|round|int }}%"></div>
+                                                        {% elif bmi < 30 %}
+                                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (bmi / 40 * 100)|round|int }}%"></div>
+                                                        {% else %}
+                                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (bmi / 40 * 100)|round|int }}%"></div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="small text-muted">
+                                                {% if bmi < 18.5 %}
+                                                    Underweight (BMI < 18.5)
+                                                {% elif bmi < 25 %}
+                                                    Normal weight (BMI 18.5-24.9)
+                                                {% elif bmi < 30 %}
+                                                    Overweight (BMI 25-29.9)
+                                                {% else %}
+                                                    Obese (BMI ≥ 30)
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row profile-section">
+                        <div class="col-md-12 mb-3">
+                            <h5 class="mb-3">Blood Information</h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.blood_type.label(class="form-label") }}
+                            {{ form.blood_type(class="form-select") }}
+                            {% if form.blood_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.blood_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row profile-section">
+                        <div class="col-md-12 mb-3">
+                            <h5 class="mb-3">Medical History</h5>
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            {{ form.medical_conditions.label(class="form-label") }}
+                            {{ form.medical_conditions(class="form-control", rows=3, placeholder="List any medical conditions that may affect your blood health (e.g., diabetes, thyroid disorders, etc.)", autocomplete="off") }}
+                            {% if form.medical_conditions.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.medical_conditions.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            {{ form.medications.label(class="form-label") }}
+                            {{ form.medications(class="form-control", rows=3, placeholder="List any medications you're currently taking (e.g., iron supplements, blood thinners, etc.)", autocomplete="off") }}
+                            {% if form.medications.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.medications.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-secondary" role="alert">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading">Privacy Notice</h6>
+                                <p class="mb-0 small">
+                                    Your medical information is encrypted and stored securely. We only use this data to provide 
+                                    personalized recommendations and improve our classification accuracy. You can update or 
+                                    delete this information at any time.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Why This Matters</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex mb-3">
+                            <div class="me-3">
+                                <i class="fas fa-microscope fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h6>Blood Type</h6>
+                                <p class="small text-muted">
+                                    Different blood types may have slight variations in normal hemoglobin ranges.
+                                    Knowing your blood type helps us provide more accurate assessments.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex mb-3">
+                            <div class="me-3">
+                                <i class="fas fa-weight fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h6>Height and Weight</h6>
+                                <p class="small text-muted">
+                                    Body mass can affect blood volume and hemoglobin concentration.
+                                    BMI is a factor considered in comprehensive anemia assessments.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h6>Medical History</h6>
+                                <p class="small text-muted">
+                                    Certain conditions and medications can affect hemoglobin levels.
+                                    This context helps us provide more relevant recommendations.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Anemia Risk Factors</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="fas fa-utensils text-primary me-2"></i>
+                                <strong>Dietary Factors:</strong> Low iron, B12, or folate intake
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-venus text-primary me-2"></i>
+                                <strong>Menstruation:</strong> Heavy menstrual bleeding
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-baby text-primary me-2"></i>
+                                <strong>Pregnancy:</strong> Increased blood volume needs
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-pills text-primary me-2"></i>
+                                <strong>Medications:</strong> Some drugs can affect red blood cell production
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-dna text-primary me-2"></i>
+                                <strong>Genetic Factors:</strong> Hereditary conditions like thalassemia
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-heartbeat text-primary me-2"></i>
+                                <strong>Chronic Diseases:</strong> Kidney disease, inflammatory conditions
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,830 @@
+{% extends "base.html" %}
+
+{% block title %}Classification History - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" 
+     style="position: fixed; top: 56px; bottom: 0; overflow-y: auto;">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users me-2"></i>
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_history') }}">
+                            <i class="fas fa-history me-2"></i>
+                            Classification History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                            <i class="fas fa-cog me-2"></i>
+                            System Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Classification History</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportHistory()">
+                            <i class="fas fa-download me-1"></i>
+                            Export History
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshData()">
+                            <i class="fas fa-sync me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="userFilter" class="form-label">User</label>
+                            <select class="form-select" id="userFilter" onchange="filterTable()">
+                                <option value="">All Users</option>
+                                <!-- Users will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="resultFilter" class="form-label">Result</label>
+                            <select class="form-select" id="resultFilter" onchange="filterTable()">
+                                <option value="">All Results</option>
+                                <option value="Anemic">Anemic</option>
+                                <option value="Normal">Normal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateFrom" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="dateFrom" onchange="filterTable()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateTo" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="dateTo" onchange="filterTable()">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-8">
+                            <div id="filterStatus" class="text-muted small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span id="filterStatusText">Loading data...</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{{ total_records }}</h5>
+                            <p class="card-text">Total Records</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">{{ anemic_cases }}</h5>
+                            <p class="card-text">Anemic Cases</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">{{ normal_cases }}</h5>
+                            <p class="card-text">Normal Cases</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            {# Ensure anemia_rate always has a numeric default to avoid UndefinedError #}
+                            {% set _anemia_rate = (anemia_rate|default(0.0)) %}
+                            <h5 class="card-title text-info">{{ '%.1f' % _anemia_rate }}%</h5>
+                            <p class="card-text">Anemia Rate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">All Classifications</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="historyTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Date</th>
+                                    <th>WBC</th>
+                                    <th>RBC</th>
+                                    <th>HGB</th>
+                                    <th>HCT</th>
+                                    <th>MCV</th>
+                                    <th>MCH</th>
+                                    <th>MCHC</th>
+                                    <th>PLT</th>
+                                    <th>Result</th>
+                                    <th>Confidence</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in history_data.records %}
+                                <tr>
+                                    <td>{{ record.id }}</td>
+                                    <td>{{ record.username }}</td>
+                                    <td>{{ record.created_at }}</td>
+                                    <td>{{ "%.2f"|format(record.wbc) }}</td>
+                                    <td>{{ "%.2f"|format(record.rbc) }}</td>
+                                    <td>{{ "%.2f"|format(record.hgb) }}</td>
+                                    <td>{{ "%.2f"|format(record.hct) }}</td>
+                                    <td>{{ "%.2f"|format(record.mcv) }}</td>
+                                    <td>{{ "%.2f"|format(record.mch) }}</td>
+                                    <td>{{ "%.2f"|format(record.mchc) }}</td>
+                                    <td>{{ "%.2f"|format(record.plt) }}</td>
+                                    <td>
+                                        {% set is_normal = (record.predicted_class is string and record.predicted_class.lower().find('normal') != -1) %}
+                                        <span class="badge {% if not is_normal %}bg-danger{% else %}bg-success{% endif %}">
+                                            {% if not is_normal %}
+                                                Anemic ({{ record.predicted_class }})
+                                            {% else %}
+                                                {{ record.predicted_class }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ "%.1f"|format(record.confidence * 100) }}%</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    data-record-id="{{ record.id }}" onclick="viewRecordDetails(this.dataset.recordId)" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                                    data-record-id="{{ record.id }}" onclick="sendResultEmail(this.dataset.recordId)" title="Send Result via Email">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                    data-record-id="{{ record.id }}" onclick="editRecord(this.dataset.recordId)" title="Edit Record">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-record-id="{{ record.id }}" onclick="deleteRecord(this.dataset.recordId)" title="Delete Record">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    {% if history_data.total_pages > 1 %}
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted">
+                            Showing {{ ((history_data.page - 1) * history_data.per_page) + 1 }} to 
+                            {{ history_data.page * history_data.per_page if history_data.page * history_data.per_page < history_data.total else history_data.total }} 
+                            of {{ history_data.total }} classifications
+                        </div>
+                        <nav aria-label="Classification history pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if history_data.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin_history', page=history_data.prev_num) }}">Previous</a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for page_num in range(1, history_data.total_pages + 1) %}
+                                    {% if page_num == history_data.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% elif page_num <= 3 or page_num > history_data.total_pages - 3 or (page_num >= history_data.page - 1 and page_num <= history_data.page + 1) %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_history', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% elif page_num == 4 and history_data.page > 5 %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                    {% elif page_num == history_data.total_pages - 3 and history_data.page < history_data.total_pages - 4 %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if history_data.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin_history', page=history_data.next_num) }}">Next</a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Record Details Modal -->
+<div class="modal fade" id="recordDetailsModal" tabindex="-1" aria-labelledby="recordDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recordDetailsModalLabel">Classification Record Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="recordDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.btn-group .btn {
+    margin-right: 2px;
+}
+
+.table td {
+    font-size: 0.9rem;
+}
+</style>
+
+<script>
+function filterTable() {
+    // Get filter values
+    var userFilter = document.getElementById('userFilter').value;
+    var resultFilter = document.getElementById('resultFilter').value;
+    var dateFrom = document.getElementById('dateFrom').value;
+    var dateTo = document.getElementById('dateTo').value;
+    
+    // Show loading state
+    showTableLoading();
+    
+    // Build query parameters
+    var params = new URLSearchParams();
+    if (userFilter) params.append('user', userFilter);
+    if (resultFilter) params.append('result', resultFilter);
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+    
+    // Make AJAX request
+    fetch(`/admin/classification/filtered-data?${params.toString()}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateTable(data.data);
+            updateFilterStatus(data.total_count);
+        } else {
+            console.error('Filter error:', data.error);
+            showTableError('Error loading filtered data');
+        }
+    })
+    .catch(error => {
+        console.error('AJAX error:', error);
+        showTableError('Error loading filtered data');
+    });
+}
+
+function showTableLoading() {
+    var tbody = document.querySelector('#historyTable tbody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="14" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading filtered data...</p>
+            </td>
+        </tr>
+    `;
+}
+
+function showTableError(message) {
+    var tbody = document.querySelector('#historyTable tbody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="14" class="text-center py-4">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function updateTable(records) {
+    var tbody = document.querySelector('#historyTable tbody');
+    
+    if (records.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="14" class="text-center py-4">
+                    <div class="text-muted">
+                        <i class="fas fa-search me-2"></i>
+                        No records found matching the selected filters.
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    var html = '';
+    records.forEach(function(record) {
+        var isNormal = record.predicted_class === 'Normal';
+        var badgeClass = isNormal ? 'bg-success' : 'bg-danger';
+        var displayClass = isNormal ? record.predicted_class : `Anemic (${record.predicted_class})`;
+        
+        html += `
+            <tr>
+                <td>${record.id}</td>
+                <td>${record.username}</td>
+                <td>${record.created_at}</td>
+                <td>${record.wbc}</td>
+                <td>${record.rbc}</td>
+                <td>${record.hgb}</td>
+                <td>${record.hct}</td>
+                <td>${record.mcv}</td>
+                <td>${record.mch}</td>
+                <td>${record.mchc}</td>
+                <td>${record.plt}</td>
+                <td>
+                    <span class="badge ${badgeClass}">
+                        ${displayClass}
+                    </span>
+                </td>
+                <td>${record.confidence_percentage}%</td>
+                <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    data-record-id="${record.id}" onclick="viewRecordDetails(this.dataset.recordId)" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                                    data-record-id="${record.id}" onclick="sendResultEmail(this.dataset.recordId)" title="Send Result via Email">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                    data-record-id="${record.id}" onclick="editRecord(this.dataset.recordId)" title="Edit Record">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-record-id="${record.id}" onclick="deleteRecord(this.dataset.recordId)" title="Delete Record">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function updateFilterStatus(totalCount) {
+    var userFilter = document.getElementById('userFilter').value;
+    var resultFilter = document.getElementById('resultFilter').value;
+    var dateFrom = document.getElementById('dateFrom').value;
+    var dateTo = document.getElementById('dateTo').value;
+    
+    var activeFilters = [];
+    if (userFilter) activeFilters.push(`User: ${userFilter}`);
+    if (resultFilter) activeFilters.push(`Result: ${resultFilter}`);
+    if (dateFrom) activeFilters.push(`From: ${dateFrom}`);
+    if (dateTo) activeFilters.push(`To: ${dateTo}`);
+    
+    var statusText = activeFilters.length > 0 
+        ? `Showing ${totalCount} records (${activeFilters.join(', ')})`
+        : `Showing ${totalCount} records (no filters applied)`;
+    
+    // Update the filter status display
+    var statusElement = document.getElementById('filterStatusText');
+    if (statusElement) {
+        statusElement.textContent = statusText;
+        
+        // Update status color
+        var statusDiv = document.getElementById('filterStatus');
+        if (statusDiv) {
+            if (activeFilters.length > 0) {
+                statusDiv.className = 'text-primary small';
+            } else {
+                statusDiv.className = 'text-muted small';
+            }
+        }
+    }
+}
+
+function clearFilters() {
+    // Clear all filter inputs
+    document.getElementById('userFilter').value = '';
+    document.getElementById('resultFilter').value = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    
+    // Reload all data
+    filterTable();
+}
+
+function refreshData() {
+    // Clear all filters and reload data
+    clearFilters();
+}
+
+function viewRecordDetails(recordId) {
+    // Show loading skeleton while fetching
+    document.getElementById('recordDetailsContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading record details...</p>
+        </div>
+    `;
+    
+    // Show modal immediately
+    var modal = new bootstrap.Modal(document.getElementById('recordDetailsModal'));
+    modal.show();
+    
+    // Fetch record details
+    fetch(`/admin/classification/${recordId}/details`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            displayRecordDetails(data.data);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading record details:', error);
+        document.getElementById('recordDetailsContent').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error loading record details: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function displayRecordDetails(data) {
+    const record = data.record;
+    const user = data.user;
+    
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'N/A';
+    const isNormal = record.predicted_class === 'Normal';
+    
+    document.getElementById('recordDetailsContent').innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>User Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Username:</strong></div>
+                            <div class="col-sm-8">${user.username}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Full Name:</strong></div>
+                            <div class="col-sm-8">${fullName}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Email:</strong></div>
+                            <div class="col-sm-8">${user.email}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Classification Results</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Predicted Class:</strong></div>
+                            <div class="col-sm-8">
+                                <span class="badge ${isNormal ? 'bg-success' : 'bg-danger'}">
+                                    ${record.predicted_class}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Confidence:</strong></div>
+                            <div class="col-sm-8">${(record.confidence * 100).toFixed(2)}%</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Date:</strong></div>
+                            <div class="col-sm-8">${record.created_at}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-vial me-2"></i>CBC Values</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-2"><strong>WBC:</strong> ${record.wbc}</div>
+                                <div class="mb-2"><strong>RBC:</strong> ${record.rbc}</div>
+                                <div class="mb-2"><strong>HGB:</strong> ${record.hgb}</div>
+                                <div class="mb-2"><strong>HCT:</strong> ${record.hct}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-2"><strong>MCV:</strong> ${record.mcv}</div>
+                                <div class="mb-2"><strong>MCH:</strong> ${record.mch}</div>
+                                <div class="mb-2"><strong>MCHC:</strong> ${record.mchc}</div>
+                                <div class="mb-2"><strong>PLT:</strong> ${record.plt}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${record.neutrophils || record.lymphocytes || record.monocytes || record.eosinophils || record.basophil || record.immature_granulocytes ? `
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-microscope me-2"></i>Differential Count</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                ${record.neutrophils ? `<div class="mb-2"><strong>Neutrophils:</strong> ${record.neutrophils}</div>` : ''}
+                                ${record.lymphocytes ? `<div class="mb-2"><strong>Lymphocytes:</strong> ${record.lymphocytes}</div>` : ''}
+                                ${record.monocytes ? `<div class="mb-2"><strong>Monocytes:</strong> ${record.monocytes}</div>` : ''}
+                            </div>
+                            <div class="col-sm-6">
+                                ${record.eosinophils ? `<div class="mb-2"><strong>Eosinophils:</strong> ${record.eosinophils}</div>` : ''}
+                                ${record.basophil ? `<div class="mb-2"><strong>Basophil:</strong> ${record.basophil}</div>` : ''}
+                                ${record.immature_granulocytes ? `<div class="mb-2"><strong>Immature Granulocytes:</strong> ${record.immature_granulocytes}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        
+        ${record.recommendation ? `
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Recommendation</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">${record.recommendation}</p>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${record.notes ? `
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Notes</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">${record.notes}</p>
+            </div>
+        </div>
+        ` : ''}
+    `;
+}
+
+function editRecord(recordId) {
+    // Redirect to edit page
+    window.location.href = `/admin/classification/${recordId}/edit`;
+}
+
+function deleteRecord(recordId) {
+    // Get record details for the modal
+    const recordElement = document.querySelector(`button[data-record-id="${recordId}"]`);
+    const recordRow = recordElement.closest('tr');
+    const username = recordRow.querySelector('td:nth-child(2)').textContent.trim();
+    const predictedClass = recordRow.querySelector('td:nth-child(12)').textContent.trim(); // Result column
+    const confidence = recordRow.querySelector('td:nth-child(13)').textContent.trim(); // Confidence column
+    const date = recordRow.querySelector('td:nth-child(3)').textContent.trim();
+
+    // Show delete confirmation modal
+    showDeleteConfirm({
+        title: 'Delete Classification Record',
+        message: `Are you sure you want to delete this classification record? This action cannot be undone and will permanently remove the record from the system.`,
+        itemName: `Record #${recordId}`,
+        itemInfo: `User: ${username} | Class: ${predictedClass} | Confidence: ${confidence} | Date: ${date}`,
+        confirmText: 'Delete Record',
+        itemId: recordId,
+        onConfirm: function(recordId) {
+            // Make AJAX call to delete the record
+            fetch(`/admin/classification/${recordId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success notification
+                    showSuccessNotification({
+                        title: 'Record Deleted',
+                        message: data.message,
+                        details: 'The classification record has been permanently removed from the system.',
+                        autoClose: true,
+                        autoCloseDelay: 2000
+                    });
+                    
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2500);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting record:', error);
+                alert('Error deleting record. Please try again.');
+            });
+        }
+    });
+}
+
+function exportHistory() {
+    // Download full classification history CSV from server (admin only)
+    window.location.href = '/admin/export/classification_history.csv';
+}
+
+function refreshData() {
+    // This would typically reload the page or refresh the data
+    location.reload();
+}
+
+function sendResultEmail(recordId) {
+    // Show loading state
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    // Make AJAX request to send email
+    fetch(`/admin/send-result-email/${recordId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success notification
+            showSuccessNotification({
+                title: 'Email Sent Successfully',
+                message: 'The anemia test result has been sent to the user\'s email address.',
+                details: `Email sent to: ${data.email}`,
+                autoClose: true,
+                autoCloseDelay: 3000
+            });
+        } else {
+            // Show error notification
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending email:', error);
+        alert('Error sending email. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        button.innerHTML = originalContent;
+        button.disabled = false;
+    });
+}
+
+// Initialize DataTable and populate filters
+$(document).ready(function() {
+    // Initialize DataTable with minimal configuration
+    $('#historyTable').DataTable({
+        "pageLength": 25,
+        "order": [[ 2, "desc" ]], // Sort by date descending
+        "columnDefs": [
+            { "orderable": false, "targets": -1 }
+        ],
+        "info": false, // Hide default info since we'll show custom status
+        "paging": false, // Disable pagination for AJAX filtering
+        "searching": false, // Disable search since we have custom filters
+        "lengthChange": false // Disable length change
+    });
+    
+    // Populate user filter dropdown
+    populateUserFilter();
+    
+    // Load initial data
+    filterTable();
+});
+
+function populateUserFilter() {
+    // Fetch available users from server
+    fetch('/admin/classification/available-users')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            var userFilter = document.getElementById('userFilter');
+            userFilter.innerHTML = '<option value="">All Users</option>';
+            
+            data.users.forEach(function(username) {
+                var option = document.createElement('option');
+                option.value = username;
+                option.textContent = username;
+                userFilter.appendChild(option);
+            });
+        } else {
+            console.error('Error loading users:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('AJAX error loading users:', error);
+    });
+}
+</script>
+{% endblock %}

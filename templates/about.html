@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - About{% endblock %}
+
+{% block content %}
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* 🌈 Global Font */
+body, h1, h2, h3, h4, h5, h6, p, label, a, button {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Container */
+.about-container {
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    padding: 40px;
+}
+
+/* Titles */
+.section-title {
+    color: #000000;
+    font-weight: 700;
+}
+.highlight {
+    color: #f94144;
+    font-weight: 700;
+}
+
+/* Text */
+.lead {
+    color: #444;
+    line-height: 1.8;
+}
+.card-title {
+    color: #0d6efd;
+    font-weight: 600;
+}
+.list-unstyled li {
+    padding: 6px 0;
+    font-weight: 500;
+}
+
+/* Images */
+.about-hero-img, .feature-img, .dev-img {
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+.about-hero-img:hover, .dev-img:hover, .feature-img:hover {
+    transform: scale(1.03);
+}
+
+/* Cards */
+.card.bg-light {
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* Developer Section */
+.developer-section {
+    border-top: 2px solid #eee;
+    margin-top: 50px;
+    padding-top: 40px;
+}
+.dev-img {
+    border: 4px solid #0d6efd;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
+
+<div class="container mt-5 mb-5">
+    <div class="about-container">
+        <h1 class="display-5 mb-4 section-title text-center">
+            About <span class="highlight">AnemoCheck</span>
+        </h1>
+
+        <div class="row align-items-center mb-5">
+            <!-- Text Section -->
+            <div class="col-lg-7">
+                <p class="lead" style="text-align: justify; text-indent: 1.5em;">
+                    <strong><span class="highlight">AnemoCheck</span></strong> is an AI-powered diagnostic system designed to help detect and assess 
+                    anemia through analysis of Complete Blood Count (CBC) parameters. Using machine learning models, 
+                    it evaluates hemoglobin, red and white blood cells, hematocrit, MCV, MCH, MCHC, and platelet count 
+                    based on <strong>World Health Organization (WHO)</strong> standards to deliver accurate and 
+                    data-driven results.
+                </p>
+
+                <h3 class="mt-4 section-title">Our Mission</h3>
+                <p class="lead" style="text-align: justify; text-indent: 1.5em;">
+                    Our mission is to make anemia detection more <span class="highlight">accessible and user-friendly</span>. 
+                    We aim to empower individuals to monitor their blood health through clear, insightful analytics — 
+                    encouraging early action and better health awareness.
+                </p>
+
+                <h3 class="mt-4 section-title">How It Works</h3>
+                <p class="lead" style="text-align: justify; text-indent: 1.5em;">
+                    <span class="highlight">AnemoCheck</span> processes CBC test data through a machine learning algorithm trained to identify 
+                    signs of anemia. By combining hemoglobin and other blood indices, it delivers both a diagnostic 
+                    result and actionable recommendations for users.
+                </p>
+                <p class="lead" style="text-align: justify; text-indent: 1.5em;">
+                    Users can also monitor their past test results through historical data tracking and visualization, 
+                    enabling them to stay informed about their overall blood health trends.
+                </p>
+            </div>
+
+            <!-- Image Section -->
+            <div class="col-lg-5 text-center">
+                <img src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=900&q=80" 
+                     alt="Blood test analysis illustration" 
+                     class="img-fluid about-hero-img mb-4">
+            </div>
+        </div>
+
+        <!-- Logo + Features -->
+        <div class="row align-items-start mt-5">
+            <div class="col-md-4 text-center mb-4">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" 
+                     alt="AnemoCheck Logo" 
+                     class="img-fluid mb-3" 
+                     style="max-width: 180px;">
+                <h4 class="fw-bold text-primary mb-1">Anemia Detection System</h4>
+                <p class="text-muted">Version 1.0</p>
+            </div>
+            <div class="col-md-8">
+                <div class="card bg-light border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-bolt text-danger me-2"></i>Key Features</h5>
+                        <ul class="list-unstyled mb-0">
+                            <li><i class="fas fa-check-circle text-success me-2"></i> Real-time anemia classification</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i> AI-driven health recommendations</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i> Historical data tracking</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i> Visual health trends and analytics</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i> Secure and private user data</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🩸 Hemoglobin Trend Visualization -->
+        <div class="mt-5">
+            <h3 class="section-title text-center mb-4">Hemoglobin Trend Visualization</h3>
+            <div class="card bg-light border-0 shadow-sm">
+                <div class="card-body">
+                    <canvas id="hemoglobinChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Developer Section -->
+        <div class="developer-section">
+            <h3 class="section-title text-center mb-4">About the Developers</h3>
+            <div class="row align-items-center">
+                <div class="col-md-3 d-flex justify-content-center mb-3 mb-md-0">
+                    <img src="{{ url_for('static', filename='img/DGM_logo_circle_healthcare.svg') }}" 
+                         alt="DGM Developer Team" 
+                         class="img-fluid rounded-circle dev-img">
+                </div>
+                <div class="col-md-9">
+                    <h4 class="fw-bold">DGM Development Team</h4>
+                    <p class="text-muted mb-1">BSCS 3IS2 | Smart Healthcare Innovators</p>
+                    <p class="lead" style="text-align: justify; text-indent: 1.5em;">
+                        <strong>DGM</strong> is a passionate team of computer science students dedicated to creating 
+                        technology that enhances healthcare diagnostics. With expertise in data science, machine learning, 
+                        and UI/UX development, the team built <span class="highlight">AnemoCheck</span> to promote 
+                        accessible and early anemia detection.
+                    </p>
+                    <p class="lead" style="text-align: justify; text-indent: 1.5em;">
+                        Their mission is to combine <strong>innovation and compassion</strong> — bridging technology 
+                        with real-world healthcare needs to empower both patients and medical professionals.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Integration -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const hemoglobinValues = {{ hemoglobin_values|tojson }};
+    const dates = {{ dates|tojson }};
+
+    const ctx = document.getElementById('hemoglobinChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Hemoglobin Level (g/dL)',
+                data: hemoglobinValues,
+                borderColor: '#f94144',
+                backgroundColor: 'rgba(249, 65, 68, 0.2)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true, labels: { font: { family: 'Poppins' } } },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                x: { 
+                    title: { display: true, text: 'Date', font: { family: 'Poppins' } },
+                    grid: { display: false }
+                },
+                y: { 
+                    title: { display: true, text: 'Hemoglobin (g/dL)', font: { family: 'Poppins' } },
+                    beginAtZero: false,
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

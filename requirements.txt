@@ -1,0 +1,10 @@
+flask
+flask-socketio
+flask-login
+flask-wtf
+eventlet
+numpy
+pandas
+scikit-learn
+matplotlib
+joblib

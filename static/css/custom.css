@@ -1,0 +1,160 @@
+/* General Styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    margin-top: auto;
+}
+
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    border-bottom: none;
+    border-top-left-radius: 0.5rem !important;
+    border-top-right-radius: 0.5rem !important;
+}
+
+/* Anemia Classification Colors */
+.anemia-normal {
+    color: #20c997;
+}
+
+.anemia-mild {
+    color: #ffc107;
+}
+
+.anemia-moderate {
+    color: #fd7e14;
+}
+
+.anemia-severe {
+    color: #dc3545;
+}
+
+/* Classification Result Page */
+.result-card {
+    margin-bottom: 2rem;
+}
+
+.result-value {
+    font-size: 3rem;
+    font-weight: 600;
+}
+
+.result-unit {
+    font-size: 1rem;
+    vertical-align: super;
+}
+
+.result-classification {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.result-confidence {
+    height: 5px;
+    border-radius: 2px;
+}
+
+/* Dashboard Styles */
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+}
+
+/* Profile page */
+.profile-section {
+    margin-bottom: 2rem;
+}
+
+/* Admin Styles */
+.admin-stat-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.admin-section-heading {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Charts */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Animated elements */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Form Styling */
+.form-floating > label {
+    color: var(--bs-dark);
+}
+
+/* Classification visualization */
+.tree-visualization {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* Loading spinner */
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--bs-primary);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Real-time notification */
+.notification-badge {
+    position: relative;
+    top: -8px;
+    right: -8px;
+    padding: 0.25em 0.6em;
+    border-radius: 50%;
+    font-size: 12px;
+    background-color: var(--bs-danger);
+    color: white;
+}

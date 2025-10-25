@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - Home{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Welcome to AnemoCheck</h2>
+                <p class="lead fs-3">
+                    AnemoCheck is an advanced anemia detection and classification system that utilizes sophisticated machine learning algorithms to analyze complete blood count (CBC) results.
+                </p>
+                <p class="fs-3">
+                    Our system allows for quick and accurate assessment of anemia severity based on various CBC indicators, offering personalized and actionable medical recommendations to support effective management.
+                </p>
+                
+                <div class="d-grid gap-2 d-md-flex mt-4">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-tachometer-alt me-2"></i> Go to Dashboard
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary me-md-2">
+                            <i class="fas fa-sign-in-alt me-1"></i> Log In
+                        </a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-1"></i> Register
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+</div>
+
+{% if current_user.is_authenticated %}
+                    
+                        
+                       
+                    
+{% else %}
+<!-- Modal -->
+<div class="modal fade" id="cbcModal" tabindex="-1" aria-labelledby="cbcModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cbcModalLabel">Anemia Detection</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+  
+        <div class="modal-body">
+          <form action="{{ url_for('xgb_try_clasify') }}" method="post">
+            {{ form.hidden_tag() }}
+            <div class="row">
+              <div class="col-md-6">
+                <!-- Age -->
+                <div class="mb-3">
+                  <label class="form-label" for="age">Age</label>
+                  <input class="form-control" id="age" name="age" placeholder="Enter Age" required type="number" min="0" value="">
+                </div>
+  
+                <!-- Gender -->
+                <div class="mb-3">
+                  <label class="form-label" for="gender">Gender</label>
+                  <select class="form-control" id="gender" name="gender" required>
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
+  
+                <!-- First half of inputs -->
+                <div class="mb-3">
+                  <label class="form-label" for="wbc">White Blood Cell Count (WBC) (10³/µL)</label>
+                  <input class="form-control" id="wbc" name="WBC" required type="text" placeholder="Enter WBC">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="rbc">Red Blood Cell Count (RBC) (million/µL)</label>
+                  <input class="form-control" id="rbc" name="RBC" required type="text" placeholder="Enter RBC">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="hemoglobin">Hemoglobin (g/dL)</label>
+                  <input class="form-control" id="hemoglobin" name="HEMOGLOBIN" required type="text" placeholder="Enter Hemoglobin">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="hematocrit">Hematocrit (%)</label>
+                  <input class="form-control" id="hematocrit" name="HEMATOCRIT" required type="text" placeholder="Enter Hematocrit">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="mcv">Mean Corpuscular Volume (MCV) (fL)</label>
+                  <input class="form-control" id="mcv" name="MCV" required type="text" placeholder="Enter MCV">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="mch">Mean Corpuscular Hemoglobin (MCH) (pg)</label>
+                  <input class="form-control" id="mch" name="MCH" required type="text" placeholder="Enter MCH">
+                </div>
+              </div>
+  
+              <div class="col-md-6">
+                <!-- Second half of inputs -->
+                <div class="mb-3">
+                  <label class="form-label" for="mchc">MCHC (g/dL)</label>
+                  <input class="form-control" id="mchc" name="MCHC" required type="text" placeholder="Enter MCHC">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="plt">Platelet Count (10³/µL)</label>
+                  <input class="form-control" id="plt" name="PLATELET" required type="text" placeholder="Enter Platelet Count">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="neutrophils">Neutrophils (%)</label>
+                  <input class="form-control" id="neutrophils" name="NEUTROPHILS" required type="text" placeholder="Enter Neutrophils">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="lymphocytes">Lymphocytes (%)</label>
+                  <input class="form-control" id="lymphocytes" name="LYMPHOCYTES" required type="text" placeholder="Enter Lymphocytes">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="monocytes">Monocytes (%)</label>
+                  <input class="form-control" id="monocytes" name="MONOCYTES" required type="text" placeholder="Enter Monocytes">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="eosinophils">Eosinophils (%)</label>
+                  <input class="form-control" id="eosinophils" name="EUSONIPHILS" required type="text" placeholder="Enter Eosinophils">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="basophil">Basophils (%)</label>
+                  <input class="form-control" id="basophil" name="BASOPHIL" required type="text" placeholder="Enter Basophils">
+                </div>
+  
+                <div class="mb-3">
+                  <label class="form-label" for="immature_granulocytes">Immature Granulocytes (%)</label>
+                  <input class="form-control" id="immature_granulocytes" name="IMMATURE_GRANULYTES" required type="text" placeholder="Enter Immature Granulocytes">
+                </div>
+              </div>
+            </div>
+  
+            <div class="modal-footer">
+                
+              <button type="submit" name="submit" class="btn btn-success">Submit</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var myModal = new bootstrap.Modal(document.getElementById('cbcModal'));
+      myModal.show();
+    });
+  </script>
+  {% endif %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-history fa-3x text-primary mb-3"></i>
+                <h4 class="card-title">Track Your History</h4>
+                <p class="card-text">
+                    Maintain a comprehensive record of your hemoglobin levels over time 
+                    and monitor your progress.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                <h4 class="card-title">Visualize Trends</h4>
+                <p class="card-text">
+                    View interactive charts showing how your hemoglobin levels 
+                    change over time.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clipboard-list fa-3x text-primary mb-3"></i>
+                <h4 class="card-title">Medical Recommendations</h4>
+                <p class="card-text">
+                    Receive personalized recommendations based on your anemia 
+                    severity level according to WHO guidelines.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

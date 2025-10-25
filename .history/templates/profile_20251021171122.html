@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - User Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark">
+                <h5 class="card-title mb-0">Your Profile</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('profile') }}" id="profileForm" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row profile-section">
+                        <div class="col-md-12 mb-3">
+                            <h5 class="mb-3">Account Information</h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.username.label(class="form-label") }}
+                            <div class="form-control">{{ current_user.username }}</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", placeholder="Enter your email", autocomplete="off", id="email") }}
+                            <div class="custom-error" id="email-error" style="display:none;">Email is required.</div>
+                            <div class="custom-error" id="email-format-error" style="display:none;">Please enter a valid email.</div>
+                            <div class="custom-error" id="email-unique-error" style="display:none;">Email already exists.</div>
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row profile-section">
+                        <div class="col-md-12 mb-3">
+                            <h5 class="mb-3">Personal Information</h5>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.first_name.label(class="form-label") }}
+                            {{ form.first_name(class="form-control", placeholder="Enter your first name", autocomplete="off", id="first_name") }}
+                            <div class="custom-error" id="first_name-error" style="display:none;">First Name is required.</div>
+                            {% if form.first_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.first_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.last_name.label(class="form-label") }}
+                            {{ form.last_name(class="form-control", placeholder="Enter your last name", autocomplete="off") }}
+                            {% if form.last_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.last_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.gender.label(class="form-label") }}
+                            {{ form.gender(class="form-select") }}
+                            {% if form.gender.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.gender.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.date_of_birth.label(class="form-label") }}
+                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" autocomplete="off">
+                            {% if form.date_of_birth.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.date_of_birth.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Format: YYYY-MM-DD (e.g., 1990-01-15)</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.medical_id.label(class="form-label") }}
+                            {{ form.medical_id(class="form-control", placeholder="Enter your medical ID if you have one", autocomplete="off", id="medical_id") }}
+                            <div class="custom-error" id="medical_id-unique-error" style="display:none;">Medical ID already exists.</div>
+                            {% if form.medical_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.medical_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Optional: For healthcare provider reference</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row profile-section">
+                        <div class="col-md-12 mb-3">
+                            <h5 class="mb-3">Change Password</h5>
+                            <p class="small text-muted">Leave these fields blank if you don't want to change your password.</p>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.current_password.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.current_password(class="form-control", placeholder="Enter your current password", autocomplete="off", id="current_password") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleCurrentPassword"><i class="fas fa-eye" id="iconCurrentPassword"></i></button>
+                            </div>
+                            <div class="custom-error" id="current_password-required" style="display:none;">Password is required.</div>
+                            <div class="custom-error" id="current_password-min" style="display:none;">Password must be at least 8 characters.</div>
+                            {% if form.current_password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.current_password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="mb-2">
+                                {{ form.new_password.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.new_password(class="form-control", placeholder="Enter your new password", autocomplete="off", id="new_password") }}
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleNewPassword"><i class="fas fa-eye" id="iconNewPassword"></i></button>
+                                </div>
+                                <div class="custom-error" id="new_password-required" style="display:none;">Password is required.</div>
+                                <div class="custom-error" id="new_password-min" style="display:none;">Password must be at least 8 characters.</div>
+                                <div class="custom-error" id="new_password-same" style="display:none;">You’ve already used this password before.</div>
+                                {% if form.new_password.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.new_password.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.confirm_password.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.confirm_password(class="form-control", placeholder="Confirm your new password", autocomplete="off", id="confirm_password") }}
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword"><i class="fas fa-eye" id="iconConfirmPassword"></i></button>
+                                </div>
+                                <div class="custom-error" id="confirm_password-required" style="display:none;">Password is required.</div>
+                                <div class="custom-error" id="confirm_password-min" style="display:none;">Password must be at least 8 characters.</div>
+                                <div class="custom-error" id="confirm_password-same" style="display:none;">You’ve already used this password before.</div>
+                                <div class="custom-error" id="confirm_password-mismatch" style="display:none;">Passwords do not match.</div>
+                                {% if form.confirm_password.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.confirm_password.errors %}
+                                            {% if 'Field must be equal to' in error %}
+                                                Passwords do not match.
+                                            {% else %}
+                                                {{ error }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary", value="Update Profile") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-dark">
+                        <h5 class="card-title mb-0">Medical Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Update your medical information to receive more personalized recommendations.
+                        </p>
+                        <div class="d-grid">
+                            <a href="{{ url_for('medical_data') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-heartbeat me-1"></i> Manage Medical Data
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-dark">
+                        <h5 class="card-title mb-0">Classification History</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            View your complete classification history and track your progress over time.
+                        </p>
+                        <div class="d-grid">
+                            <a href="{{ url_for('history') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-history me-1"></i> View History
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+    const emailInput = document.getElementById('email');
+    if (!emailInput) return;
+
+    // Inject minimal CSS if needed
+    const style = document.createElement('style');
+    style.textContent = `.custom-error{background:#dc3545;color:#fff;padding:8px 12px;border-radius:6px;font-size:14px;margin-top:6px;display:none}.form-control.error{border-color:#dc3545;box-shadow:0 0 0 0.2rem rgba(220,53,69,.25)}.form-control.success{border-color:#28a745;box-shadow:0 0 0 0.2rem rgba(40,167,69,.25)}`;
+    document.head.appendChild(style);
+
+    const emailErr = document.getElementById('email-error');
+    const emailFmt = document.getElementById('email-format-error');
+    const emailUni = document.getElementById('email-unique-error');
+
+    const successTimers = {};
+    function markSuccess(el){
+        el.classList.remove('error');
+        el.classList.add('success');
+        if (successTimers.email) clearTimeout(successTimers.email);
+        successTimers.email = setTimeout(()=>{ el.classList.remove('success'); }, 3000);
+    }
+    function hideAll(){
+        [emailErr,emailFmt,emailUni].forEach(d=>{ if (d) d.style.display='none'; });
+        emailInput.classList.remove('error');
+    }
+    function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+    async function checkUnique(v){
+        try{
+            const res = await fetch(`/api/profile/email-exists?email=${encodeURIComponent(v)}`);
+            const data = await res.json();
+            return !!(data && data.success && data.exists === true);
+        }catch(e){ return false; }
+    }
+
+    async function validateEmail(){
+        const v = (emailInput.value||'').trim();
+        hideAll();
+        if (!v){
+            if (emailErr){ emailErr.style.display='block'; }
+            emailInput.classList.add('error');
+            return false;
+        }
+        if (!isValidEmail(v)){
+            if (emailFmt){ emailFmt.style.display='block'; }
+            emailInput.classList.add('error');
+            return false;
+        }
+        const exists = await checkUnique(v);
+        if (exists){
+            if (emailUni){ emailUni.style.display='block'; }
+            emailInput.classList.add('error');
+            return false;
+        }
+        markSuccess(emailInput);
+        return true;
+    }
+
+    emailInput.addEventListener('input', ()=>{ validateEmail(); });
+    emailInput.addEventListener('blur', ()=>{ validateEmail(); });
+
+    const medicalIdInput = document.getElementById('medical_id');
+    if (!medicalIdInput) return;
+
+    const midErr = document.getElementById('medical_id-unique-error');
+
+    async function checkUniqueMedicalId(v){
+        if (!v.trim()) return false; // empty allowed
+        try{
+            const res = await fetch(`/api/profile/medical-id-exists?medical_id=${encodeURIComponent(v)}`);
+            const data = await res.json();
+            return !!(data && data.success && data.exists === true);
+        }catch(e){ return false; }
+    }
+
+    async function validateMedicalId(){
+        const v = (medicalIdInput.value||'').trim();
+        // Clear prior
+        if (midErr) midErr.style.display = 'none';
+        medicalIdInput.classList.remove('error');
+        if (!v){
+            // optional field; always valid when empty
+            return true;
+        }
+        const exists = await checkUniqueMedicalId(v);
+        if (exists){
+            if (midErr) midErr.style.display = 'block';
+            medicalIdInput.classList.add('error');
+            return false;
+        }
+        return true;
+    }
+
+    medicalIdInput.addEventListener('input', ()=>{ validateMedicalId(); });
+    medicalIdInput.addEventListener('blur', ()=>{ validateMedicalId(); });
+
+    // Set max date to today and preserve pre-filled profile DOB
+    const dob = document.getElementById('date_of_birth');
+    if (dob){
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth()+1).padStart(2,'0');
+        const dd = String(today.getDate()).padStart(2,'0');
+        dob.max = `${yyyy}-${mm}-${dd}`;
+        // Preserve server-provided value if present
+        const serverDob = '{{ form.date_of_birth.data or "" }}';
+        if (serverDob && !dob.value){ dob.value = serverDob; }
+    }
+})();
+</script>
+<script>
+(function(){
+    const currentEl = document.getElementById('current_password');
+    const newEl = document.getElementById('new_password');
+    const confirmEl = document.getElementById('confirm_password');
+    const form = document.getElementById('profileForm');
+
+    // Success glow timers (3 seconds)
+    const successTimers = {};
+    function markSuccess(el, key){
+        if (!el) return;
+        el.classList.remove('error');
+        el.classList.add('success');
+        if (successTimers[key]) clearTimeout(successTimers[key]);
+        successTimers[key] = setTimeout(()=>{ el.classList.remove('success'); }, 3000);
+    }
+
+    function hideAll(idBase){
+        const req = document.getElementById(idBase+'-required');
+        const min = document.getElementById(idBase+'-min');
+        const same = document.getElementById(idBase+'-same');
+        const mismatch = document.getElementById(idBase+'-mismatch');
+        if (req) req.style.display='none';
+        if (min) min.style.display='none';
+        if (same) same.style.display='none';
+        if (mismatch) mismatch.style.display='none';
+    }
+
+    function markError(el){ if (el){ el.classList.add('error'); el.classList.remove('success'); } }
+    function markClear(el){ if (el){ el.classList.remove('error'); } }
+
+    function anyFilled(){
+        return ((currentEl?.value||'').trim() || (newEl?.value||'').trim() || (confirmEl?.value||'').trim()) ? true : false;
+    }
+
+    function validatePwd(el, idBase){
+        if (!el) return true;
+        hideAll(idBase);
+        const v = (el.value||'').trim();
+        const requireNow = anyFilled();
+        if (!v){
+            if (requireNow){
+                const req = document.getElementById(idBase+'-required');
+                if (req) req.style.display='block';
+                markError(el); 
+                return false;
+            } else {
+                // all empty allowed
+                markClear(el);
+                return true;
+            }
+        }
+        if (v.length < 8){
+            const min = document.getElementById(idBase+'-min');
+            if (min) min.style.display='block';
+            markError(el); return false;
+        }
+        markClear(el);
+        // Tentatively success; final same-as-current checked below
+        markSuccess(el, idBase);
+        return true;
+    }
+
+    function validateSameAsCurrent(){
+        const curr = (currentEl?.value||'').trim();
+        const newv = (newEl?.value||'').trim();
+        const conf = (confirmEl?.value||'').trim();
+        let ok = true;
+        const requireNow = anyFilled();
+        // same as current checks (only when something entered)
+        if (requireNow && curr && newv && curr === newv){
+            const same = document.getElementById('new_password-same');
+            if (same) same.style.display='block';
+            markError(newEl); ok = false;
+        } else {
+            const same = document.getElementById('new_password-same');
+            if (same) same.style.display='none';
+        }
+        if (requireNow && curr && conf && curr === conf){
+            const same = document.getElementById('confirm_password-same');
+            if (same) same.style.display='block';
+            markError(confirmEl); ok = false;
+        } else {
+            const same = document.getElementById('confirm_password-same');
+            if (same) same.style.display='none';
+        }
+        // new vs confirm mismatch (only when entered)
+        const mismatchEl = document.getElementById('confirm_password-mismatch');
+        if (requireNow && newv && conf && newv !== conf){
+            if (mismatchEl) mismatchEl.style.display='block';
+            markError(confirmEl); ok = false;
+        } else {
+            if (mismatchEl) mismatchEl.style.display='none';
+        }
+        // If all good, refresh success glow
+        if (ok && requireNow) {
+            if ((newEl?.value||'').trim().length >= 8) markSuccess(newEl,'new_password');
+            if ((confirmEl?.value||'').trim().length >= 8) markSuccess(confirmEl,'confirm_password');
+        }
+        return ok;
+    }
+
+    function wire(el, idBase){ if (!el) return; el.addEventListener('input', ()=>{ validatePwd(el,idBase); validateSameAsCurrent(); }); el.addEventListener('blur', ()=>{ validatePwd(el,idBase); validateSameAsCurrent(); }); }
+    wire(currentEl,'current_password');
+    wire(newEl,'new_password');
+    wire(confirmEl,'confirm_password');
+
+    if (form){
+        form.addEventListener('submit', function(e){
+            // Allow submit if all three are empty
+            if (!anyFilled()) return;
+            let ok = true;
+            ok = validatePwd(currentEl,'current_password') && ok;
+            ok = validatePwd(newEl,'new_password') && ok;
+            ok = validatePwd(confirmEl,'confirm_password') && ok;
+            ok = validateSameAsCurrent() && ok;
+            if (!ok) e.preventDefault();
+        });
+    }
+
+    // Show/hide password toggles
+    function wireToggle(btnId, inputId, iconId){
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (!btn || !input || !icon) return;
+        btn.addEventListener('click', function(){
+            if (input.type === 'password'){
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
+    wireToggle('toggleCurrentPassword','current_password','iconCurrentPassword');
+    wireToggle('toggleNewPassword','new_password','iconNewPassword');
+    wireToggle('toggleConfirmPassword','confirm_password','iconConfirmPassword');
+})();
+</script>
+{% endblock %}

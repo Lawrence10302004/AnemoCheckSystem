@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" 
+     style="position: fixed; top: 56px; bottom: 0; overflow-y: auto;">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users me-2"></i>
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_history') }}">
+                            <i class="fas fa-history me-2"></i>
+                            Classification History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                            <i class="fas fa-cog me-2"></i>
+                            System Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">User Management</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportUsers()">
+                            <i class="fas fa-download me-1"></i>
+                            Export Users
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{{ users_data.counts.total }}</h5>
+                            <p class="card-text">Total Users</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">{{ users_data.counts.regulars }}</h5>
+                            <p class="card-text">Regular Users</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">{{ users_data.counts.admins }}</h5>
+                            <p class="card-text">Administrators</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">{{ users_data.counts.active }}</h5>
+                            <p class="card-text">Active Users</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">All Users</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="usersTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Full Name</th>
+                                    <th>Gender</th>
+                                    <th>Date of Birth</th>
+                                    <th>Medical ID</th>
+                                    <th>Role</th>
+                                    <th>Created</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users_data.records %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                                    <td>{{ user.gender or 'N/A' }}</td>
+                                    <td>{{ user.date_of_birth or 'N/A' }}</td>
+                                    <td>{{ user.medical_id or 'N/A' }}</td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                            <span class="badge bg-danger">Admin</span>
+                                        {% else %}
+                                            <span class="badge bg-primary">User</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.created_at }}</td>
+                                    <td>{{ user.last_login or 'Never' }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                        <button type="button" class="btn btn-sm btn-outline-info" 
+                            onclick="viewUserDetails('{{ user.id }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                        {% if not user.is_admin %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                        onclick="deleteUser(this)" data-user-id="{{ user.id }}" data-username="{{ user.username|escape }}" data-user-email="{{ user.email|escape }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <!-- Pagination -->
+                        {% if users_data.total_pages > 1 %}
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Showing {{ ((users_data.page - 1) * users_data.per_page) + 1 }} to 
+                                {{ users_data.page * users_data.per_page if users_data.page * users_data.per_page < users_data.total else users_data.total }} 
+                                of {{ users_data.total }} users
+                            </div>
+                            <nav aria-label="Users pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    {% if users_data.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_users', page=users_data.prev_num) }}">Previous</a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in range(1, users_data.total_pages + 1) %}
+                                        {% if page_num == users_data.page %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                        {% elif page_num <= 3 or page_num > users_data.total_pages - 3 or (page_num >= users_data.page - 1 and page_num <= users_data.page + 1) %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_users', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                        {% elif page_num == 4 and users_data.page > 5 %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                        {% elif page_num == users_data.total_pages - 3 and users_data.page < users_data.total_pages - 4 %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if users_data.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_users', page=users_data.next_num) }}">Next</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" aria-labelledby="userDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userDetailsModalLabel">User Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="userDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.btn-group .btn {
+    margin-right: 2px;
+}
+</style>
+
+<script>
+function viewUserDetails(userId) {
+    // Show loading skeleton while fetching
+    document.getElementById('userDetailsContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading user details...</p>
+        </div>
+    `;
+    
+    // Show modal immediately
+    var modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+    modal.show();
+    
+    // Fetch user details
+    fetch(`/admin/user/${userId}/details`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            displayUserDetails(data.data);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading user details:', error);
+        document.getElementById('userDetailsContent').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error loading user details: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function displayUserDetails(data) {
+    const user = data.user;
+    const medicalData = data.medical_data;
+    const classificationHistory = data.classification_history;
+    const conversations = data.conversations;
+    
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'N/A';
+    const role = user.is_admin ? 'Administrator' : 'User';
+    const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
+    const createdAt = new Date(user.created_at).toLocaleString();
+    
+    let medicalInfoHtml = '';
+    if (medicalData) {
+        medicalInfoHtml = `
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Blood Type:</strong> ${medicalData.blood_type || 'N/A'}<br>
+                    <strong>Allergies:</strong> ${medicalData.allergies || 'None'}<br>
+                    <strong>Medications:</strong> ${medicalData.medications || 'None'}
+                </div>
+                <div class="col-md-6">
+                    <strong>Medical Conditions:</strong> ${medicalData.medical_conditions || 'None'}<br>
+                    <strong>Emergency Contact:</strong> ${medicalData.emergency_contact || 'N/A'}<br>
+                    <strong>Insurance:</strong> ${medicalData.insurance_info || 'N/A'}
+                </div>
+            </div>
+        `;
+    } else {
+        medicalInfoHtml = '<p class="text-muted">No medical data available</p>';
+    }
+    
+    let classificationHtml = '';
+    if (classificationHistory && classificationHistory.length > 0) {
+        classificationHtml = `
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Hemoglobin</th>
+                            <th>Prediction</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${classificationHistory.map(record => `
+                            <tr>
+                                <td>${new Date(record.created_at).toLocaleDateString()}</td>
+                                <td>${record.hgb} g/dL</td>
+                                <td><span class="badge ${record.predicted_class === 'Anemic' ? 'bg-danger' : 'bg-success'}">${record.predicted_class}</span></td>
+                                <td>${(record.confidence * 100).toFixed(1)}%</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } else {
+        classificationHtml = '<p class="text-muted">No classification history available</p>';
+    }
+    
+    let conversationsHtml = '';
+    if (conversations && conversations.length > 0) {
+        conversationsHtml = `
+            <div class="list-group">
+                ${conversations.map(conv => `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Admin Conversation</h6>
+                            <small>${conv.last_message_time ? new Date(conv.last_message_time).toLocaleDateString() : 'N/A'}</small>
+                        </div>
+                        <p class="mb-1">${conv.last_message ? conv.last_message.substring(0, 100) + (conv.last_message.length > 100 ? '...' : '') : 'No messages'}</p>
+                        <small>Messages: ${conv.message_count || 0}</small>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        conversationsHtml = '<p class="text-muted">No chat conversations available</p>';
+    }
+    
+    document.getElementById('userDetailsContent').innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3"><i class="fas fa-user me-2"></i>Basic Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>ID:</strong></td><td>${user.id}</td></tr>
+                    <tr><td><strong>Username:</strong></td><td>${user.username}</td></tr>
+                    <tr><td><strong>Email:</strong></td><td>${user.email}</td></tr>
+                    <tr><td><strong>Full Name:</strong></td><td>${fullName}</td></tr>
+                    <tr><td><strong>Gender:</strong></td><td>${user.gender || 'N/A'}</td></tr>
+                    <tr><td><strong>Date of Birth:</strong></td><td>${user.date_of_birth || 'N/A'}</td></tr>
+                    <tr><td><strong>Medical ID:</strong></td><td>${user.medical_id || 'N/A'}</td></tr>
+                    <tr><td><strong>Role:</strong></td><td><span class="badge ${user.is_admin ? 'bg-danger' : 'bg-primary'}">${role}</span></td></tr>
+                    <tr><td><strong>Created:</strong></td><td>${createdAt}</td></tr>
+                    <tr><td><strong>Last Login:</strong></td><td>${lastLogin}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3"><i class="fas fa-heartbeat me-2"></i>Medical Information</h6>
+                ${medicalInfoHtml}
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Recent Classifications</h6>
+                ${classificationHtml}
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3"><i class="fas fa-comments me-2"></i>Chat Conversations</h6>
+                ${conversationsHtml}
+            </div>
+        </div>
+    `;
+}
+
+function deleteUser(el) {
+    const userId = el.dataset.userId;
+    const username = el.dataset.username || '';
+    const userEmail = el.dataset.userEmail || '';
+
+    // Show delete confirmation modal
+    showDeleteConfirm({
+        title: 'Delete User',
+        message: `Are you sure you want to delete user "${username}"? This action cannot be undone and will permanently remove the user and all their data from the system.`,
+        itemName: username,
+        itemInfo: `Email: ${userEmail}`,
+        confirmText: 'Delete User',
+        itemId: userId,
+        onConfirm: function(userId) {
+            // Show loading state
+            const deleteButton = el;
+            const originalContent = deleteButton.innerHTML;
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            deleteButton.disabled = true;
+            
+            // Make AJAX call to delete user
+            fetch(`/admin/user/${userId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success notification
+                    showSuccessNotification({
+                        title: 'User Deleted',
+                        message: data.message,
+                        details: 'The user has been permanently removed from the system.',
+                        autoClose: true,
+                        autoCloseDelay: 2000
+                    });
+                    
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2500);
+                } else {
+                    alert('Error: ' + data.error);
+                    // Restore button state
+                    deleteButton.innerHTML = originalContent;
+                    deleteButton.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting user: ' + error.message);
+                // Restore button state
+                deleteButton.innerHTML = originalContent;
+                deleteButton.disabled = false;
+            });
+        }
+    });
+}
+
+function exportUsers() {
+    // Download users CSV from server
+    window.location.href = '/admin/export/users.csv';
+}
+
+// Initialize DataTable
+$(document).ready(function() {
+    $('#usersTable').DataTable({
+        "pageLength": 25,
+        "order": [[ 0, "desc" ]],
+        "columnDefs": [
+            { "orderable": false, "targets": -1 }
+        ]
+    });
+});
+</script>
+{% endblock %}

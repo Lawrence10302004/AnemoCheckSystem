@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="95" fill="#2b3035" stroke="#3a81c3" stroke-width="4"/>
+  
+  <!-- Face -->
+  <circle cx="100" cy="85" r="60" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  
+  <!-- Hair -->
+  <path d="M60,50 C60,30 140,30 140,50 C140,70 130,85 130,85 L70,85 C70,85 60,70 60,50 Z" 
+        fill="#6c757d" />
+  
+  <!-- Eyes -->
+  <ellipse cx="80" cy="75" rx="8" ry="10" fill="#212529" />
+  <ellipse cx="120" cy="75" rx="8" ry="10" fill="#212529" />
+  
+  <!-- Eyebrows -->
+  <path d="M70,60 C75,57 85,57 90,60" fill="none" stroke="#6c757d" stroke-width="3" stroke-linecap="round" />
+  <path d="M110,60 C115,57 125,57 130,60" fill="none" stroke="#6c757d" stroke-width="3" stroke-linecap="round" />
+  
+  <!-- Smile -->
+  <path d="M80,110 C90,120 110,120 120,110" fill="none" stroke="#212529" stroke-width="3" stroke-linecap="round" />
+  
+  <!-- Glasses -->
+  <circle cx="80" cy="75" r="15" fill="none" stroke="#0d6efd" stroke-width="2" />
+  <circle cx="120" cy="75" r="15" fill="none" stroke="#0d6efd" stroke-width="2" />
+  <line x1="95" y1="75" x2="105" y2="75" stroke="#0d6efd" stroke-width="2" />
+  <line x1="65" y1="75" x2="55" y2="70" stroke="#0d6efd" stroke-width="2" />
+  <line x1="135" y1="75" x2="145" y2="70" stroke="#0d6efd" stroke-width="2" />
+  
+  <!-- Shirt Collar -->
+  <path d="M70,150 L100,180 L130,150" fill="#0d6efd" />
+  
+  <!-- Lab Coat -->
+  <path d="M50,150 C50,130 60,120 70,120 L130,120 C140,120 150,130 150,150 L150,190 L50,190 Z" 
+        fill="#f8f9fa" stroke="#dee2e6" stroke-width="2" />
+  
+  <!-- Stethoscope -->
+  <circle cx="130" cy="140" r="6" fill="#dc3545" />
+  <path d="M130,146 C130,146 120,150 110,170" fill="none" stroke="#dc3545" stroke-width="3" />
+  
+  <!-- Name Badge -->
+  <rect x="70" y="140" width="40" height="15" rx="2" fill="#0d6efd" />
+  <text x="90" y="152" font-family="Arial, sans-serif" font-size="8" font-weight="bold" 
+        text-anchor="middle" fill="#ffffff">ANDREW</text>
+</svg>

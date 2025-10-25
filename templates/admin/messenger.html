@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Messenger{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <!-- Users Sidebar -->
+        <div class="col-md-3 bg-light border-end">
+            <div class="p-3 bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Admin Messenger</h5>
+                <small>{{ all_users|length }} users online</small>
+            </div>
+            
+            <!-- Search Users -->
+            <div class="p-3">
+                <div class="input-group">
+                    <input type="text" id="user-search" class="form-control" placeholder="Search users...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Users List -->
+            <div class="users-list" id="users-list">
+                <!-- Recent Conversations First -->
+                {% if conversations %}
+                <div class="section-header">
+                    <h6 class="text-muted mb-2"><i class="fas fa-history me-1"></i>Recent Conversations</h6>
+                </div>
+                {% for conversation in conversations %}
+                <div class="user-item conversation-item" onclick="openChatWindow({{ conversation.user_id }}, '{{ conversation.username }}', '{{ conversation.first_name }}', '{{ conversation.last_name }}')" data-user-id="{{ conversation.user_id }}" data-conversation-id="{{ conversation.id }}">
+                    <div class="d-flex align-items-center p-3">
+                        <div class="user-avatar me-3">
+                            <div class="avatar-circle">
+                                {{ conversation.username[0].upper() }}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="user-name">{{ conversation.username }}</div>
+                            {% if conversation.first_name or conversation.last_name %}
+                                <div class="user-fullname">{{ conversation.first_name }} {{ conversation.last_name }}</div>
+                            {% endif %}
+                            <div class="conversation-preview">
+                                <small class="text-muted">
+                                    {% if conversation.last_message %}
+                                        {{ conversation.last_message[:30] }}{% if conversation.last_message|length > 30 %}...{% endif %}
+                                    {% else %}
+                                        No messages yet
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="conversation-time">
+                                <small class="text-muted">
+                                    {% if conversation.last_message_time %}
+                                        {{ conversation.last_message_time[:16] }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="chat-indicator">
+                            <span class="unread-count" id="unread-{{ conversation.user_id }}" style="display: none;">0</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="section-header mt-3">
+                    <h6 class="text-muted mb-2"><i class="fas fa-users me-1"></i>All Users</h6>
+                </div>
+                {% endif %}
+                
+                <!-- All Users -->
+                {% for user in all_users %}
+                    {% if not user.is_admin %}
+                    <div class="user-item" onclick="openChatWindow({{ user.id }}, '{{ user.username }}', '{{ user.first_name }}', '{{ user.last_name }}')" data-user-id="{{ user.id }}">
+                        <div class="d-flex align-items-center p-3">
+                            <div class="user-avatar me-3">
+                                <div class="avatar-circle">
+                                    {{ user.username[0].upper() }}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="user-name">{{ user.username }}</div>
+                                {% if user.first_name or user.last_name %}
+                                    <div class="user-fullname">{{ user.first_name }} {{ user.last_name }}</div>
+                                {% endif %}
+                                <div class="user-status">
+                                    <span class="status-dot online"></span>
+                                    <span class="status-text">Online</span>
+                                </div>
+                            </div>
+                            <div class="chat-indicator">
+                                <span class="unread-count" id="unread-{{ user.id }}" style="display: none;">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Chat Windows Area -->
+        <div class="col-md-9 bg-white position-relative">
+            <div id="chat-windows-container" class="chat-windows-container">
+                <!-- Welcome Message -->
+                <div id="welcome-message" class="welcome-message">
+                    <div class="text-center">
+                        <i class="fas fa-comments fa-4x text-muted mb-4"></i>
+                        <h3>Welcome to Admin Messenger</h3>
+                        <p class="text-muted">Select a user from the sidebar to start chatting</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.h-100 {
+    height: 100vh;
+}
+
+.users-list {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+.user-item {
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.user-item:hover {
+    background-color: #f8f9fa;
+}
+
+.user-item.active {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.section-header {
+    padding: 10px 15px 5px 15px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 5px;
+}
+
+.conversation-item {
+    background-color: #f8f9fa;
+}
+
+.conversation-item:hover {
+    background-color: #e9ecef;
+}
+
+.conversation-preview {
+    margin-top: 2px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.conversation-time {
+    margin-top: 2px;
+    font-size: 10px;
+}
+
+.avatar-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #2196f3, #21cbf3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.user-fullname {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.user-status {
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-dot.online {
+    background-color: #4caf50;
+}
+
+.status-text {
+    color: #666;
+}
+
+.unread-count {
+    background-color: #f44336;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+}
+
+.chat-windows-container {
+    position: relative;
+    height: calc(100vh - 60px);
+    overflow: hidden;
+}
+
+.chat-window {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: none;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.chat-window.active {
+    display: flex;
+    z-index: 20;
+}
+
+.chat-window.minimized {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    height: 400px;
+    z-index: 1000;
+}
+
+.chat-header {
+    background: #2196f3;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-user-info {
+    display: flex;
+    align-items: center;
+}
+
+.chat-user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.chat-user-details h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.chat-user-details small {
+    opacity: 0.8;
+}
+
+.chat-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-controls button {
+    background: none;
+    border: none;
+    color: white;
+    padding: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chat-controls button:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.message {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.message.sent {
+    justify-content: flex-end;
+}
+
+.message.received {
+    justify-content: flex-start;
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.message.sent .message-bubble {
+    background: #2196f3;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.received .message-bubble {
+    background: white;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    border-bottom-left-radius: 4px;
+}
+
+.message-time {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+.message.sent .message-time {
+    text-align: right;
+}
+
+.chat-input {
+    padding: 15px 20px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    border-radius: 0 0 8px 8px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.message-input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    padding: 10px 15px;
+    outline: none;
+    resize: none;
+}
+
+.message-input:focus {
+    border-color: #2196f3;
+}
+
+.send-button {
+    background: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background: #1976d2;
+}
+
+.send-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.welcome-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+/* Minimized chat window styles */
+.minimized .chat-header {
+    cursor: pointer;
+}
+
+.minimized .chat-messages {
+    display: none;
+}
+
+.minimized .chat-input {
+    display: none;
+}
+
+/* Animation for chat windows */
+.chat-window {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar styling */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+
+<script>
+let openChatWindows = {};
+let activeChatWindow = null;
+let conversationIds = {}; // Store conversation IDs for each user
+
+// Open chat window for a user
+function openChatWindow(userId, username, firstName, lastName) {
+    console.log('Opening chat window for:', userId, username);
+    
+    // If chat window already exists, just activate it
+    if (openChatWindows[userId]) {
+        activateChatWindow(userId);
+        return;
+    }
+    
+    // Create new chat window
+    const chatWindow = createChatWindow(userId, username, firstName, lastName);
+    openChatWindows[userId] = chatWindow;
+    
+    // Add to container
+    document.getElementById('chat-windows-container').appendChild(chatWindow);
+    
+    // Activate the new window
+    activateChatWindow(userId);
+    
+    // Hide welcome message
+    document.getElementById('welcome-message').style.display = 'none';
+    
+    // Check if this user already has a conversation ID from the sidebar
+    const userItem = document.querySelector(`.user-item[data-user-id="${userId}"]`);
+    if (userItem && userItem.dataset.conversationId) {
+        conversationIds[userId] = parseInt(userItem.dataset.conversationId);
+        console.log('Using existing conversation ID for user', userId, ':', conversationIds[userId]);
+        loadMessages(userId);
+    } else {
+        // Get or create conversation ID for this user
+        getOrCreateConversation(userId);
+    }
+    
+    // Mark user item as active
+    document.querySelectorAll('.user-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (userItem) {
+        userItem.classList.add('active');
+    }
+}
+
+// Create chat window HTML
+function createChatWindow(userId, username, firstName, lastName) {
+    const chatWindow = document.createElement('div');
+    chatWindow.className = 'chat-window';
+    chatWindow.id = `chat-${userId}`;
+    chatWindow.innerHTML = `
+        <div class="chat-header">
+            <div class="chat-user-info">
+                <div class="chat-user-avatar">${username[0].toUpperCase()}</div>
+                <div class="chat-user-details">
+                    <h6>${username}</h6>
+                    <small>${firstName} ${lastName}</small>
+                </div>
+            </div>
+            <div class="chat-controls">
+                <button onclick="minimizeChatWindow(${userId})" title="Minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button onclick="closeChatWindow(${userId})" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-messages" id="messages-${userId}">
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-comment-dots fa-2x mb-2"></i>
+                <p>Loading messages...</p>
+            </div>
+        </div>
+        <div class="chat-input">
+            <div class="input-group">
+                <textarea class="message-input" id="input-${userId}" placeholder="Type your message..." rows="1"></textarea>
+                <button class="send-button" onclick="sendMessage(${userId})">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners
+    const messageInput = chatWindow.querySelector(`#input-${userId}`);
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage(userId);
+        }
+    });
+    
+    return chatWindow;
+}
+
+// Activate chat window
+function activateChatWindow(userId) {
+    // Deactivate all windows
+    Object.keys(openChatWindows).forEach(id => {
+        const window = openChatWindows[id];
+        window.classList.remove('active');
+        window.classList.remove('minimized');
+    });
+    
+    // Activate selected window
+    if (openChatWindows[userId]) {
+        openChatWindows[userId].classList.add('active');
+        activeChatWindow = userId;
+        
+        // Update user item active state
+        document.querySelectorAll('.user-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-user-id="${userId}"]`).classList.add('active');
+        
+        // Clear unread count
+        const unreadElement = document.getElementById(`unread-${userId}`);
+        if (unreadElement) {
+            unreadElement.style.display = 'none';
+        }
+    }
+}
+
+// Minimize chat window
+function minimizeChatWindow(userId) {
+    if (openChatWindows[userId]) {
+        openChatWindows[userId].classList.add('minimized');
+        openChatWindows[userId].classList.remove('active');
+        activeChatWindow = null;
+    }
+}
+
+// Close chat window
+function closeChatWindow(userId) {
+    if (openChatWindows[userId]) {
+        openChatWindows[userId].remove();
+        delete openChatWindows[userId];
+        
+        if (activeChatWindow === userId) {
+            activeChatWindow = null;
+            
+            // Show welcome message if no windows open
+            if (Object.keys(openChatWindows).length === 0) {
+                document.getElementById('welcome-message').style.display = 'flex';
+            }
+        }
+        
+        // Remove active state from user item
+        document.querySelector(`[data-user-id="${userId}"]`).classList.remove('active');
+    }
+}
+
+// Get or create conversation for a user
+function getOrCreateConversation(userId) {
+    console.log('Getting or creating conversation for user:', userId);
+    
+    fetch('/admin/chat/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            user_id: userId
+        })
+    })
+    .then(response => {
+        console.log('Get/create conversation response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Get/create conversation response data:', data);
+        if (data.success) {
+            conversationIds[userId] = data.conversation_id;
+            console.log('Stored conversation ID for user', userId, ':', data.conversation_id);
+            // Now load messages
+            loadMessages(userId);
+        } else {
+            console.error('Error getting/creating conversation:', data.error);
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error getting/creating conversation:', error);
+        alert('Error getting/creating conversation: ' + error.message);
+    });
+}
+
+// Load messages for a conversation
+function loadMessages(userId) {
+    console.log('Loading messages for user:', userId);
+    
+    const conversationId = conversationIds[userId];
+    console.log('Using conversation ID:', conversationId);
+    
+    if (!conversationId) {
+        console.log('No conversation ID found, getting/creating conversation');
+        getOrCreateConversation(userId);
+        return;
+    }
+    
+    // Load messages using stored conversation ID
+    fetch(`/admin/chat/messages/${conversationId}`)
+    .then(response => {
+        console.log('Messages response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Messages response data:', data);
+        if (data.success) {
+            displayMessages(userId, data.messages);
+        } else {
+            console.error('Error loading messages:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading messages:', error);
+    });
+}
+
+// Display messages in chat window
+function displayMessages(userId, messages) {
+    const messagesContainer = document.getElementById(`messages-${userId}`);
+    
+    if (messages.length === 0) {
+        messagesContainer.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-comment-dots fa-2x mb-2"></i>
+                <p>No messages yet. Start the conversation!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    messagesContainer.innerHTML = '';
+    messages.forEach(message => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${message.sender_id === 1 ? 'sent' : 'received'}`;
+        
+        messageDiv.innerHTML = `
+            <div class="message-bubble">
+                <div>${message.message_text}</div>
+                <div class="message-time">${new Date(message.created_at).toLocaleString()}</div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+    });
+    
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Send message
+function sendMessage(userId) {
+    const messageInput = document.getElementById(`input-${userId}`);
+    const messageText = messageInput.value.trim();
+    
+    console.log('sendMessage called for user:', userId);
+    console.log('Message text:', messageText);
+    console.log('Message input element:', messageInput);
+    
+    if (!messageText) {
+        console.log('No message text, returning');
+        return;
+    }
+    
+    const conversationId = conversationIds[userId];
+    console.log('Using stored conversation ID:', conversationId);
+    
+    if (!conversationId) {
+        console.log('No conversation ID found, getting/creating conversation first');
+        getOrCreateConversation(userId);
+        // Try again after a short delay
+        setTimeout(() => {
+            sendMessage(userId);
+        }, 500);
+        return;
+    }
+    
+    console.log('Sending message to user:', userId, messageText, 'with conversation ID:', conversationId);
+    
+    // Send message using stored conversation ID
+    fetch('/admin/chat/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            conversation_id: conversationId,
+            message: messageText
+        })
+    })
+    .then(response => {
+        console.log('Send message response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Send message response data:', data);
+        if (data.success) {
+            messageInput.value = '';
+            console.log('Message sent successfully, reloading messages');
+            // Reload messages
+            loadMessages(userId);
+        } else {
+            console.error('Error sending message:', data.error);
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        alert('Error sending message: ' + error.message);
+    });
+}
+
+// Search users
+document.getElementById('user-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const userItems = document.querySelectorAll('.user-item');
+    
+    userItems.forEach(item => {
+        const username = item.querySelector('.user-name').textContent.toLowerCase();
+        const fullname = item.querySelector('.user-fullname').textContent.toLowerCase();
+        
+        if (username.includes(searchTerm) || fullname.includes(searchTerm)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+});
+
+// Auto-resize textarea
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('message-input')) {
+        e.target.style.height = 'auto';
+        e.target.style.height = e.target.scrollHeight + 'px';
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin Messenger initialized');
+});
+</script>
+{% endblock %}

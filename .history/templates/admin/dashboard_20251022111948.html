@@ -1,0 +1,1213 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - AnemoCheck{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+<div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" 
+     style="position: fixed; top: 56px; bottom: 0; overflow-y: auto;">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-users me-2"></i>
+                    User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_history') }}">
+                    <i class="fas fa-history me-2"></i>
+                    Classification History
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                    <i class="fas fa-cog me-2"></i>
+                    System Settings
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Admin Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportDashboard()">
+                            <i class="fas fa-download me-1"></i>
+                            Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Users</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_users }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Classifications</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_classifications }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Anemic Cases</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.anemic_cases }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Normal Cases</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.normal_cases }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classification Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                    <h6 class="m-0 font-weight-bold text-primary">Classification Statistics</h6>
+                    <p class="mb-0 text-muted small">Comprehensive analytics showing user demographics and anemia severity distribution across the platform</p>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="document.getElementById('importFile').click()">
+                            <i class="fas fa-upload me-1"></i>
+                            Import Data
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportClassificationStats()">
+                            <i class="fas fa-download me-1"></i>
+                            Export Statistics
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="text-center mb-3">
+                                <h6 class="font-weight-bold text-dark">User Age Groups</h6>
+                            </div>
+                            <canvas id="ageGroupsChart" width="400" height="300"></canvas>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="text-center mb-3">
+                                <h6 class="font-weight-bold text-dark">Gender Distribution</h6>
+                            </div>
+                            <canvas id="genderChart" width="400" height="300"></canvas>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="text-center mb-3">
+                                <h6 class="font-weight-bold text-dark">Severity Classification</h6>
+                            </div>
+                            <canvas id="severityChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Imported Data Management -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Imported Data Management</h6>
+                    <p class="mb-0 text-muted small mt-2">
+                        Displays all imported datasets added to the system. Each record shows the file name, date of import, and total number of entries contained in the uploaded CSV file. Users can choose to apply or unapply the imported data from the analytics graphs, or permanently delete the file from the system.
+                    </p>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="importedDataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Date Imported</th>
+                                    <th>Total Records</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importedDataTableBody">
+                                <!-- Data will be loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden file input for import -->
+            <input type="file" id="importFile" accept=".csv" style="display: none;" onchange="handleFileImport(this)">
+
+            <!-- Toast Notification Container -->
+            <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+                <!-- Toast notifications will be dynamically inserted here -->
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div id="deleteModal" class="modal-overlay" style="display: none;" onclick="closeDeleteModal()">
+                <div class="modal-container" onclick="event.stopPropagation()">
+                    <div class="modal-card">
+                        <div class="modal-header">
+                            <div class="modal-icon warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="modal-title">
+                                <h5>Confirm Dataset Deletion</h5>
+                                <p>This action cannot be undone</p>
+                            </div>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to permanently delete this dataset? All associated data will be removed from the system and cannot be recovered.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                                <i class="fas fa-times me-1"></i>
+                                Cancel
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                                <i class="fas fa-trash me-1"></i>
+                                Confirm Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Recent Classifications</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Date</th>
+                                            <th>Result</th>
+                                            <th>Confidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in recent_data.records %}
+                                        <tr>
+                                            <td>{{ record.username }}</td>
+                                            <td>{{ record.created_at }}</td>
+                                            <td>
+                                                {% set is_normal = (record.predicted_class is string and record.predicted_class.lower().find('normal') != -1) %}
+                                                <span class="badge {% if not is_normal %}bg-danger{% else %}bg-success{% endif %}">
+                                                    {% if not is_normal %}
+                                                        Anemic ({{ record.predicted_class }})
+                                                    {% else %}
+                                                        {{ record.predicted_class }}
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td>{{ "%.1f"|format(record.confidence * 100) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Pagination -->
+                            {% if recent_data.total_pages > 1 %}
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="text-muted">
+                                    Showing {{ ((recent_data.page - 1) * recent_data.per_page) + 1 }} to 
+                                    {{ recent_data.page * recent_data.per_page if recent_data.page * recent_data.per_page < recent_data.total else recent_data.total }} 
+                                    of {{ recent_data.total }} results
+                                </div>
+                                <nav aria-label="Recent classifications pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        {% if recent_data.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_dashboard', page=recent_data.prev_num) }}">Previous</a>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% for page_num in range(1, recent_data.total_pages + 1) %}
+                                            {% if page_num == recent_data.page %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                            {% elif page_num <= 3 or page_num > recent_data.total_pages - 3 or (page_num >= recent_data.page - 1 and page_num <= recent_data.page + 1) %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin_dashboard', page=page_num) }}">{{ page_num }}</a>
+                                            </li>
+                                            {% elif page_num == 4 and recent_data.page > 5 %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                            {% elif page_num == recent_data.total_pages - 3 and recent_data.page < recent_data.total_pages - 4 %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if recent_data.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_dashboard', page=recent_data.next_num) }}">Next</a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>System Health</span>
+                                    <span class="badge bg-success">Online</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Database</span>
+                                    <span class="badge bg-success">Connected</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>ML Model</span>
+                                    <span class="badge bg-success">Loaded</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Last Backup</span>
+                                    <span class="text-muted">Today</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #c62828 !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #28a745 !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #17a2b8 !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #ffc107 !important;
+}
+
+/* Toast Notification Styles */
+.toast-notification {
+    background: #ffffff;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    min-width: 300px;
+    max-width: 400px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-notification.fade-out {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.toast-notification.success {
+    border-left: 4px solid #1cc88a;
+}
+
+.toast-notification.error {
+    border-left: 4px solid #e74a3b;
+}
+
+.toast-notification.warning {
+    border-left: 4px solid #f6c23e;
+}
+
+.toast-notification.info {
+    border-left: 4px solid #36b9cc;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.toast-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.toast-icon.success {
+    background-color: #d4edda;
+    color: #1cc88a;
+}
+
+.toast-icon.error {
+    background-color: #f8d7da;
+    color: #e74a3b;
+}
+
+.toast-icon.warning {
+    background-color: #fff3cd;
+    color: #f6c23e;
+}
+
+.toast-icon.info {
+    background-color: #d1ecf1;
+    color: #36b9cc;
+}
+
+.toast-message {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #5a5c69;
+    margin: 0 0 0.25rem 0;
+}
+
+.toast-description {
+    font-size: 0.8rem;
+    color: #858796;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.toast-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: #858796;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.toast-close:hover {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+}
+
+/* Delete Confirmation Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+}
+
+.modal-container {
+    max-width: 500px;
+    width: 90%;
+    margin: 0 auto;
+    transform: scale(0.9) translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.show .modal-container {
+    transform: scale(1) translateY(0);
+}
+
+.modal-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    border: 1px solid #e3e6f0;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.modal-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-icon.warning {
+    background-color: #fff3cd;
+    color: #f6c23e;
+    border: 2px solid #f6c23e;
+}
+
+.modal-title h5 {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: #2c3e50;
+    margin: 0 0 0.25rem 0;
+}
+
+.modal-title p {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+    font-weight: 500;
+}
+
+.modal-body {
+    padding: 1rem 1.5rem;
+}
+
+.modal-body p {
+    color: #5a5c69;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    background-color: #f8f9fc;
+    border-top: 1px solid #e3e6f0;
+}
+
+.modal-footer .btn {
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.modal-footer .btn-secondary {
+    background-color: #6c757d;
+    color: #ffffff;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(108, 117, 125, 0.3);
+}
+
+.modal-footer .btn-danger {
+    background-color: #e74a3b;
+    color: #ffffff;
+}
+
+.modal-footer .btn-danger:hover {
+    background-color: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(231, 74, 59, 0.3);
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function exportDashboard() {
+    // Download dashboard statistics CSV from server
+    window.location.href = '/admin/export/dashboard.csv';
+}
+
+function showToast(type, title, description, duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    const toastId = 'toast-' + Date.now();
+    
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast-notification ${type}`;
+    
+    const iconClass = type === 'success' ? 'fas fa-check' : 
+                     type === 'error' ? 'fas fa-times' : 
+                     type === 'warning' ? 'fas fa-exclamation-triangle' : 
+                     'fas fa-info-circle';
+    
+    toast.innerHTML = `
+        <div class="toast-content">
+            <div class="toast-icon ${type}">
+                <i class="${iconClass}"></i>
+            </div>
+            <div class="toast-message">
+                <div class="toast-title">${title}</div>
+                <div class="toast-description">${description}</div>
+            </div>
+        </div>
+        <button class="toast-close" onclick="hideToast('${toastId}')">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // Auto-hide after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            hideToast(toastId);
+        }, duration);
+    }
+}
+
+function hideToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.add('fade-out');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }
+}
+
+// Modal functions
+let currentDeleteId = null;
+
+function showDeleteModal(datasetId) {
+    currentDeleteId = datasetId;
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'flex';
+    
+    // Trigger animation
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
+    
+    // Add keyboard listener for ESC key
+    document.addEventListener('keydown', handleModalKeydown);
+}
+
+function handleModalKeydown(event) {
+    if (event.key === 'Escape') {
+        closeDeleteModal();
+    }
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('show');
+    
+    // Remove keyboard listener
+    document.removeEventListener('keydown', handleModalKeydown);
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+        currentDeleteId = null;
+    }, 300);
+}
+
+function confirmDelete() {
+    if (currentDeleteId) {
+        closeDeleteModal();
+        performDelete(currentDeleteId);
+    }
+}
+
+function performDelete(datasetId) {
+    console.log('Deleting dataset:', datasetId);
+    fetch(`/admin/api/delete_dataset/${datasetId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Delete response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Response text:', text);
+                throw new Error('Server returned invalid JSON. Check server logs.');
+            }
+        });
+    })
+    .then(data => {
+        console.log('Delete response data:', data);
+        if (data.success) {
+            showToast(
+                'success',
+                'Dataset Deleted',
+                'The dataset has been permanently removed from the system.',
+                3000
+            );
+            loadImportedDataTable();
+            refreshCharts();
+        } else {
+            showToast(
+                'error',
+                'Delete Failed',
+                data.error,
+                5000
+            );
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting dataset:', error);
+        showToast(
+            'error',
+            'Delete Failed',
+            error.message,
+            5000
+        );
+    });
+}
+
+function exportClassificationStats() {
+    // Download classification statistics CSV from server
+    window.location.href = '/admin/export/classification_stats.csv';
+}
+
+function handleFileImport(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+        alert('Please select a CSV file.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Show loading state
+    const importBtn = document.querySelector('button[onclick*="importFile"]');
+    const originalText = importBtn.innerHTML;
+    importBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importing...';
+    importBtn.disabled = true;
+    
+    fetch('/admin/import/classification_data', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Error response text:', text);
+                throw new Error(`HTTP error! status: ${response.status}. Response: ${text.substring(0, 200)}...`);
+            });
+        }
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Response text:', text);
+                throw new Error('Server returned invalid JSON. Check server logs.');
+            }
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            showToast(
+                'success',
+                'Import Successful',
+                `Successfully imported ${data.imported_count} records. Charts have been updated with the new data.`,
+                4000
+            );
+            // Refresh charts with new data
+            refreshCharts();
+            // Refresh imported data table
+            loadImportedDataTable();
+        } else {
+            showToast(
+                'error',
+                'Import Failed',
+                data.error,
+                5000
+            );
+        }
+    })
+    .catch(error => {
+        console.error('Import error:', error);
+        alert('Import failed: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        importBtn.innerHTML = originalText;
+        importBtn.disabled = false;
+        input.value = ''; // Clear file input
+    });
+}
+
+function refreshCharts() {
+    // Fetch updated chart data and recreate charts
+    fetch('/admin/api/charts_data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the global chartsData variable
+                window.chartsData = data.data;
+                // Recreate all charts
+                createAllCharts();
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing charts:', error);
+        });
+}
+
+// Chart data from server
+const chartsData = {{ charts_data|tojson }};
+
+// Chart instances for updating
+let ageChartInstance = null;
+let genderChartInstance = null;
+let severityChartInstance = null;
+
+function destroyChart(chartInstance) {
+    if (chartInstance && typeof chartInstance.destroy === 'function') {
+        chartInstance.destroy();
+    }
+}
+
+function createAllCharts() {
+    const data = window.chartsData || chartsData;
+    
+    // Age Groups Chart
+    const ageCtx = document.getElementById('ageGroupsChart').getContext('2d');
+    destroyChart(ageChartInstance);
+    ageChartInstance = new Chart(ageCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(data.age_groups),
+            datasets: [{
+                label: 'Number of Users',
+                data: Object.values(data.age_groups),
+                backgroundColor: ['#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22'],
+                borderWidth: 1,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // Gender Distribution Chart
+    const genderCtx = document.getElementById('genderChart').getContext('2d');
+    destroyChart(genderChartInstance);
+    genderChartInstance = new Chart(genderCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(data.gender_stats),
+            datasets: [{
+                data: Object.values(data.gender_stats),
+                backgroundColor: ['#3498db', '#e74c3c', '#95a5a6'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Severity Classification Chart
+    const severityCtx = document.getElementById('severityChart').getContext('2d');
+    destroyChart(severityChartInstance);
+    
+    // Define color mapping for severity classifications
+    const severityColors = {
+        'Normal': '#ffcdd2',          // Very Light Red/Pink
+        'Mild Anemia': '#ff8a80',     // Light Red
+        'Moderate Anemia': '#e74c3c', // Medium Red
+        'Severe Anemia': '#c62828',   // Darkest Red
+        'Other': '#6c757d'            // Gray
+    };
+    
+    // Get labels and create color array based on order
+    const severityLabels = Object.keys(data.severity_stats);
+    const severityColorsArray = severityLabels.map(label => severityColors[label] || '#6c757d');
+    
+    severityChartInstance = new Chart(severityCtx, {
+        type: 'pie',
+        data: {
+            labels: severityLabels,
+            datasets: [{
+                data: Object.values(data.severity_stats),
+                backgroundColor: severityColorsArray,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            plugins: {
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const dataset = data.datasets[0];
+                                    const value = dataset.data[i];
+                                    const color = dataset.backgroundColor[i];
+                                    
+                                    return {
+                                        text: label,
+                                        fillStyle: color,
+                                        strokeStyle: color,
+                                        lineWidth: 2,
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    createAllCharts();
+    loadImportedDataTable();
+});
+
+function loadImportedDataTable() {
+    // Load imported data table
+    console.log('Loading imported data table...');
+    fetch('/admin/api/imported_data')
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Imported data response:', data);
+            if (data.success) {
+                populateImportedDataTable(data.data);
+            } else {
+                console.error('Error loading imported data:', data.error);
+                // Show error in table
+                const tbody = document.getElementById('importedDataTableBody');
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading data: ' + data.error + '</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching imported data:', error);
+            // Show error in table
+            const tbody = document.getElementById('importedDataTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading data: ' + error.message + '</td></tr>';
+        });
+}
+
+function populateImportedDataTable(importedData) {
+    const tbody = document.getElementById('importedDataTableBody');
+    tbody.innerHTML = '';
+    
+    if (importedData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No imported data found</td></tr>';
+        return;
+    }
+    
+    importedData.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.filename}</td>
+            <td>${item.imported_at}</td>
+            <td>${item.total_records}</td>
+            <td>
+                <span class="badge ${item.is_applied ? 'bg-success' : 'bg-secondary'}">
+                    ${item.is_applied ? 'Applied' : 'Unapplied'}
+                </span>
+            </td>
+            <td>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm ${item.is_applied ? 'btn-warning' : 'btn-success'}" 
+                            onclick="${item.is_applied ? 'unapplyDataset' : 'applyDataset'}('${item.id}')">
+                        <i class="fas ${item.is_applied ? 'fa-eye-slash' : 'fa-eye'} me-1"></i>
+                        ${item.is_applied ? 'Unapply' : 'Apply'}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteDataset('${item.id}')">
+                        <i class="fas fa-trash me-1"></i>
+                        Delete
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function applyDataset(datasetId) {
+    console.log('Applying dataset:', datasetId);
+    fetch(`/admin/api/apply_dataset/${datasetId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Apply response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Response text:', text);
+                throw new Error('Server returned invalid JSON. Check server logs.');
+            }
+        });
+    })
+    .then(data => {
+        console.log('Apply response data:', data);
+        if (data.success) {
+            showToast(
+                'success',
+                'Dataset Applied',
+                'The dataset has been successfully applied to the analytics charts.',
+                3000
+            );
+            loadImportedDataTable();
+            refreshCharts();
+        } else {
+            showToast(
+                'error',
+                'Apply Failed',
+                data.error,
+                5000
+            );
+        }
+    })
+    .catch(error => {
+        console.error('Error applying dataset:', error);
+        alert('Error applying dataset: ' + error.message);
+    });
+}
+
+function unapplyDataset(datasetId) {
+    console.log('Unapplying dataset:', datasetId);
+    fetch(`/admin/api/unapply_dataset/${datasetId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Unapply response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Response text:', text);
+                throw new Error('Server returned invalid JSON. Check server logs.');
+            }
+        });
+    })
+    .then(data => {
+        console.log('Unapply response data:', data);
+        if (data.success) {
+            showToast(
+                'info',
+                'Dataset Unapplied',
+                'The dataset has been temporarily removed from the analytics charts.',
+                3000
+            );
+            loadImportedDataTable();
+            refreshCharts();
+        } else {
+            showToast(
+                'error',
+                'Unapply Failed',
+                data.error,
+                5000
+            );
+        }
+    })
+    .catch(error => {
+        console.error('Error unapplying dataset:', error);
+        alert('Error unapplying dataset: ' + error.message);
+    });
+}
+
+function deleteDataset(datasetId) {
+    showDeleteModal(datasetId);
+}
+</script>
+{% endblock %}

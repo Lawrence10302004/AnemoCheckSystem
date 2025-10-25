@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - AnemoCheck{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+<div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" 
+     style="position: fixed; top: 56px; bottom: 0; overflow-y: auto;">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-users me-2"></i>
+                    User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_history') }}">
+                    <i class="fas fa-history me-2"></i>
+                    Classification History
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                    <i class="fas fa-cog me-2"></i>
+                    System Settings
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Admin Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportDashboard()">
+                            <i class="fas fa-download me-1"></i>
+                            Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Users</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_users }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Classifications</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_classifications }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Anemic Cases</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.anemic_cases }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Normal Cases</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.normal_cases }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classification Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Classification Statistics</h6>
+                    <p class="mb-0 text-muted small">Comprehensive analytics showing user demographics and anemia severity distribution across the platform</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="text-center mb-3">
+                                <h6 class="font-weight-bold text-dark">User Age Groups</h6>
+                            </div>
+                            <canvas id="ageGroupsChart" width="400" height="300"></canvas>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="text-center mb-3">
+                                <h6 class="font-weight-bold text-dark">Gender Distribution</h6>
+                            </div>
+                            <canvas id="genderChart" width="400" height="300"></canvas>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="text-center mb-3">
+                                <h6 class="font-weight-bold text-dark">Severity Classification</h6>
+                            </div>
+                            <canvas id="severityChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast Notification Container -->
+            <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+                <!-- Toast notifications will be dynamically inserted here -->
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Recent Classifications</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Date</th>
+                                            <th>Result</th>
+                                            <th>Confidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in recent_data.records %}
+                                        <tr>
+                                            <td>{{ record.username }}</td>
+                                            <td>{{ record.created_at }}</td>
+                                            <td>
+                                                {% set is_normal = (record.predicted_class is string and record.predicted_class.lower().find('normal') != -1) %}
+                                                <span class="badge {% if not is_normal %}bg-danger{% else %}bg-success{% endif %}">
+                                                    {% if not is_normal %}
+                                                        Anemic ({{ record.predicted_class }})
+                                                    {% else %}
+                                                        {{ record.predicted_class }}
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td>{{ "%.1f"|format(record.confidence * 100) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Pagination -->
+                            {% if recent_data.total_pages > 1 %}
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="text-muted">
+                                    Showing {{ ((recent_data.page - 1) * recent_data.per_page) + 1 }} to 
+                                    {{ recent_data.page * recent_data.per_page if recent_data.page * recent_data.per_page < recent_data.total else recent_data.total }} 
+                                    of {{ recent_data.total }} results
+                                </div>
+                                <nav aria-label="Recent classifications pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        {% if recent_data.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_dashboard', page=recent_data.prev_num) }}">Previous</a>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% for page_num in range(1, recent_data.total_pages + 1) %}
+                                            {% if page_num == recent_data.page %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                            {% elif page_num <= 3 or page_num > recent_data.total_pages - 3 or (page_num >= recent_data.page - 1 and page_num <= recent_data.page + 1) %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin_dashboard', page=page_num) }}">{{ page_num }}</a>
+                                            </li>
+                                            {% elif page_num == 4 and recent_data.page > 5 %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                            {% elif page_num == recent_data.total_pages - 3 and recent_data.page < recent_data.total_pages - 4 %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if recent_data.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_dashboard', page=recent_data.next_num) }}">Next</a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>System Health</span>
+                                    <span class="badge bg-success">Online</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Database</span>
+                                    <span class="badge bg-success">Connected</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>ML Model</span>
+                                    <span class="badge bg-success">Loaded</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Last Backup</span>
+                                    <span class="text-muted">Today</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #c62828 !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #28a745 !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #17a2b8 !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #ffc107 !important;
+}
+
+/* Toast Notification Styles */
+.toast-notification {
+    background: #ffffff;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+    min-width: 320px;
+    max-width: 420px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-notification.fade-out {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.toast-notification.success {
+    border-left: 5px solid #1cc88a;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.toast-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0.125rem 0.5rem rgba(28, 200, 138, 0.3);
+}
+
+.toast-icon.success {
+    background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+    color: #ffffff;
+}
+
+.toast-message {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #2c3e50;
+    margin: 0 0 0.375rem 0;
+    letter-spacing: 0.025em;
+}
+
+.toast-description {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin: 0;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.toast-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #adb5bd;
+    font-size: 1.125rem;
+    cursor: pointer;
+    padding: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.toast-close:hover {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    transform: scale(1.1);
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function exportDashboard() {
+    // Download dashboard statistics CSV from server
+    window.location.href = '/admin/export/dashboard.csv';
+}
+
+function showToast(type, title, description, duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    const toastId = 'toast-' + Date.now();
+    
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast-notification ${type}`;
+    
+    const iconClass = type === 'success' ? 'fas fa-check' : 
+                     type === 'error' ? 'fas fa-times' : 
+                     type === 'warning' ? 'fas fa-exclamation-triangle' : 
+                     'fas fa-info-circle';
+    
+    toast.innerHTML = `
+        <div class="toast-content">
+            <div class="toast-icon ${type}">
+                <i class="${iconClass}"></i>
+            </div>
+            <div class="toast-message">
+                <div class="toast-title">${title}</div>
+                <div class="toast-description">${description}</div>
+            </div>
+        </div>
+        <button class="toast-close" onclick="hideToast('${toastId}')">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger slide-in animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // Auto-hide after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            hideToast(toastId);
+        }, duration);
+    }
+}
+
+function hideToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.add('fade-out');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 400);
+    }
+}
+
+// Function to show success alert for dataset applied
+function showDatasetAppliedAlert() {
+    showToast(
+        'success',
+        'Dataset Applied Successfully',
+        'The dataset has been successfully applied to the analytics charts. All visualizations have been updated.',
+        3000
+    );
+}
+
+// Chart data from server
+const chartsData = {{ charts_data|tojson }};
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Age Groups Chart
+    const ageCtx = document.getElementById('ageGroupsChart').getContext('2d');
+    new Chart(ageCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(chartsData.age_groups),
+            datasets: [{
+                label: 'Number of Users',
+                data: Object.values(chartsData.age_groups),
+                backgroundColor: ['#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22'],
+                borderWidth: 1,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // Gender Distribution Chart
+    const genderCtx = document.getElementById('genderChart').getContext('2d');
+    new Chart(genderCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(chartsData.gender_stats),
+            datasets: [{
+                data: Object.values(chartsData.gender_stats),
+                backgroundColor: ['#3498db', '#e74c3c', '#95a5a6'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Severity Classification Chart
+    const severityCtx = document.getElementById('severityChart').getContext('2d');
+    new Chart(severityCtx, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(chartsData.severity_stats),
+            datasets: [{
+                data: Object.values(chartsData.severity_stats),
+                backgroundColor: [
+                    '#28a745', // Normal - Green
+                    '#ffc107', // Mild - Yellow
+                    '#fd7e14', // Moderate - Orange
+                    '#dc3545', // Severe - Red
+                    '#6c757d'  // Other - Gray
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

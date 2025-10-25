@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - AnemoCheck{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+<div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" 
+     style="position: fixed; top: 56px; bottom: 0; overflow-y: auto;">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-users me-2"></i>
+                    User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_history') }}">
+                    <i class="fas fa-history me-2"></i>
+                    Classification History
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                    <i class="fas fa-cog me-2"></i>
+                    System Settings
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Admin Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportDashboard()">
+                            <i class="fas fa-download me-1"></i>
+                            Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Users</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_users }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Classifications</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_classifications }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Anemic Cases</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.anemic_cases }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Normal Cases</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.normal_cases }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Recent Classifications</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Date</th>
+                                            <th>Result</th>
+                                            <th>Confidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in recent_data.records %}
+                                        <tr>
+                                            <td>{{ record.username }}</td>
+                                            <td>{{ record.created_at }}</td>
+                                            <td>
+                                                {% set is_normal = (record.predicted_class is string and record.predicted_class.lower().find('normal') != -1) %}
+                                                <span class="badge {% if not is_normal %}bg-danger{% else %}bg-success{% endif %}">
+                                                    {% if not is_normal %}
+                                                        Anemic ({{ record.predicted_class }})
+                                                    {% else %}
+                                                        {{ record.predicted_class }}
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td>{{ "%.1f"|format(record.confidence * 100) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Pagination -->
+                            {% if recent_data.total_pages > 1 %}
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="text-muted">
+                                    Showing {{ ((recent_data.page - 1) * recent_data.per_page) + 1 }} to 
+                                    {{ recent_data.page * recent_data.per_page if recent_data.page * recent_data.per_page < recent_data.total else recent_data.total }} 
+                                    of {{ recent_data.total }} results
+                                </div>
+                                <nav aria-label="Recent classifications pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        {% if recent_data.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_dashboard', page=recent_data.prev_num) }}">Previous</a>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% for page_num in range(1, recent_data.total_pages + 1) %}
+                                            {% if page_num == recent_data.page %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                            {% elif page_num <= 3 or page_num > recent_data.total_pages - 3 or (page_num >= recent_data.page - 1 and page_num <= recent_data.page + 1) %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin_dashboard', page=page_num) }}">{{ page_num }}</a>
+                                            </li>
+                                            {% elif page_num == 4 and recent_data.page > 5 %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                            {% elif page_num == recent_data.total_pages - 3 and recent_data.page < recent_data.total_pages - 4 %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if recent_data.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_dashboard', page=recent_data.next_num) }}">Next</a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>System Health</span>
+                                    <span class="badge bg-success">Online</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Database</span>
+                                    <span class="badge bg-success">Connected</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>ML Model</span>
+                                    <span class="badge bg-success">Loaded</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Last Backup</span>
+                                    <span class="text-muted">Today</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #c62828 !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #28a745 !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #17a2b8 !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #ffc107 !important;
+}
+</style>
+
+<script>
+function exportDashboard() {
+    // Download dashboard statistics CSV from server
+    window.location.href = '/admin/export/dashboard.csv';
+}
+</script>
+{% endblock %}

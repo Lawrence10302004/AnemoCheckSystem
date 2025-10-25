@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - Register{% endblock %}
+
+{% block head_content %}
+<style>
+    .custom-error {
+        background-color: #dc3545;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        margin-top: 5px;
+        display: none;
+    }
+    
+    .form-control.error {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    
+    .form-select.error {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    
+    /* Success/valid state with green glow */
+    .form-control.success {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Create Account</h2>
+                    
+                    <form method="post" action="{{ url_for('register') }}" id="registerForm" novalidate>
+                        {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.username.label(class="form-label") }}
+                            {{ form.username(class="form-control", placeholder="Choose a username", autocomplete="off", required=true) }}
+                            <div class="custom-error" id="username-error">Username is required.</div>
+                            <div class="custom-error" id="username-unique-error" style="display: none;">Username already exists.</div>
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", placeholder="Enter your email", autocomplete="off", required=true) }}
+                            <div class="custom-error" id="email-error">Email is required.</div>
+                            <div class="custom-error" id="email-unique-error" style="display: none;">Email already exists.</div>
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.first_name.label(class="form-label") }}
+                            {{ form.first_name(class="form-control", placeholder="Enter your first name", autocomplete="off", required=true) }}
+                            <div class="custom-error" id="first_name-error">First name is required.</div>
+                            {% if form.first_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.first_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.last_name.label(class="form-label") }}
+                            {{ form.last_name(class="form-control", placeholder="Enter your last name", autocomplete="off", required=true) }}
+                            <div class="custom-error" id="last_name-error">Last name is required.</div>
+                            {% if form.last_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.last_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.gender.label(class="form-label") }}
+                            {{ form.gender(class="form-select", required=true) }}
+                            <div class="custom-error" id="gender-error">Gender is required.</div>
+                            {% if form.gender.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.gender.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.date_of_birth.label(class="form-label") }}
+                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
+                            <div class="custom-error" id="date_of_birth-error">Date of birth is required.</div>
+                            {% if form.date_of_birth.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.date_of_birth.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.medical_id.label(class="form-label") }}
+                        {{ form.medical_id(class="form-control", placeholder="Optional: Enter medical ID if you have one", autocomplete="off") }}
+                        <div class="custom-error" id="medical_id-unique-error" style="display: none;">Medical ID already exists.</div>
+                        {% if form.medical_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.medical_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.password(class="form-control", placeholder="Choose a password (min. 8 characters)", id="registerPassword", autocomplete="off", required=true) }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleRegisterPassword">
+                                    <i class="fas fa-eye" id="registerPasswordIcon"></i>
+                                </button>
+                            </div>
+                            <div class="custom-error" id="registerPassword-error">Password is required.</div>
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.password2.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.password2(class="form-control", placeholder="Confirm your password", id="registerPassword2", autocomplete="off", required=true) }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleRegisterPassword2">
+                                    <i class="fas fa-eye" id="registerPassword2Icon"></i>
+                                </button>
+                            </div>
+                            <div class="custom-error" id="registerPassword2-error">Password confirmation is required.</div>
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.password2.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+                
+                <div class="mt-3 text-center">
+                    <p>Already have an account? <a href="{{ url_for('login') }}">Log in here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registerForm');
+    const registerBtn = document.getElementById('registerBtn');
+    
+    // Handle flashed server errors and map to field-level custom errors
+    (function mapFlashedErrors(){
+        const alerts = document.querySelectorAll('.alert');
+        let hideAny = false;
+        alerts.forEach(a => {
+            const txt = a.textContent || '';
+            if (txt.includes('Registration failed:')) {
+                hideAny = true;
+                if (txt.toLowerCase().includes('username already exists')) {
+                    const el = document.getElementById('username-unique-error');
+                    if (el) { el.style.display = 'block'; }
+                    const f = document.getElementById('username');
+                    if (f) { f.classList.add('error'); }
+                }
+                if (txt.toLowerCase().includes('email already exists')) {
+                    const el = document.getElementById('email-unique-error');
+                    if (el) { el.style.display = 'block'; }
+                    const f = document.getElementById('email');
+                    if (f) { f.classList.add('error'); }
+                }
+                if (txt.toLowerCase().includes('medical id already exists')) {
+                    const el = document.getElementById('medical_id-unique-error');
+                    if (el) { el.style.display = 'block'; }
+                    const f = document.getElementById('medical_id');
+                    if (f) { f.classList.add('error'); }
+                }
+            }
+        });
+        if (hideAny) {
+            alerts.forEach(a => { a.style.display = 'none'; });
+        }
+    })();
+
+    // Success timers to revert the green glow after 5s
+    const successTimers = {};
+    function markSuccess(fieldName) {
+        const field = document.getElementById(fieldName);
+        if (!field) return;
+        field.classList.remove('error');
+        field.classList.add('success');
+        if (successTimers[fieldName]) clearTimeout(successTimers[fieldName]);
+        successTimers[fieldName] = setTimeout(() => {
+            field.classList.remove('success');
+        }, 3000);
+    }
+
+    // Required fields (excluding medical_id)
+    const requiredFields = [
+        'username', 'email', 'first_name', 'last_name', 
+        'gender', 'date_of_birth', 'registerPassword', 'registerPassword2'
+    ];
+    
+    // Function to show error
+    function showError(fieldName, message) {
+        const field = document.getElementById(fieldName);
+        const errorDiv = document.getElementById(fieldName + '-error');
+        
+        if (field && errorDiv) {
+            field.classList.add('error');
+            field.classList.remove('success');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
+    
+    // Function to hide error
+    function hideError(fieldName) {
+        const field = document.getElementById(fieldName);
+        const errorDiv = document.getElementById(fieldName + '-error');
+        
+        if (field && errorDiv) {
+            field.classList.remove('error');
+            errorDiv.style.display = 'none';
+        }
+    }
+    
+    // Function to validate individual field
+    function validateField(fieldName) {
+        const field = document.getElementById(fieldName);
+        if (!field) return true;
+        
+        const value = field.value.trim();
+        
+        if (!value) {
+            showError(fieldName, getFieldLabel(fieldName) + ' is required.');
+            return false;
+        }
+        
+        // Additional validations (live prompts)
+        if (fieldName === 'username') {
+            if (value.length < 4 || value.length > 64) {
+                showError(fieldName, 'Field must be between 4 and 64 characters long.');
+                return false;
+            } else {
+                hideError(fieldName);
+                markSuccess(fieldName);
+            }
+        }
+        
+        if (fieldName === 'email') {
+            if (!isValidEmail(value)) {
+                showError(fieldName, 'Please enter a valid email.');
+                return false;
+            } else {
+                hideError(fieldName);
+                markSuccess(fieldName);
+            }
+        }
+        
+        if (fieldName === 'registerPassword') {
+            if (value.length < 8) {
+                showError(fieldName, 'Password must be at least 8 characters.');
+                return false;
+            } else {
+                hideError(fieldName);
+                markSuccess(fieldName);
+            }
+        }
+        
+        if (fieldName === 'registerPassword2') {
+            const password = document.getElementById('registerPassword').value;
+            if (value !== password) {
+                showError(fieldName, 'Passwords do not match.');
+                return false;
+            } else {
+                hideError(fieldName);
+                markSuccess(fieldName);
+            }
+        }
+        
+        // For other fields, if not failing, mark success
+        if (!['username','email','registerPassword','registerPassword2'].includes(fieldName)) {
+            hideError(fieldName);
+            markSuccess(fieldName);
+        }
+        return true;
+    }
+    
+    // Function to get field label
+    function getFieldLabel(fieldName) {
+        const labels = {
+            'username': 'Username',
+            'email': 'Email',
+            'first_name': 'First name',
+            'last_name': 'Last name',
+            'gender': 'Gender',
+            'date_of_birth': 'Date of birth',
+            'registerPassword': 'Password',
+            'registerPassword2': 'Password confirmation'
+        };
+        return labels[fieldName] || fieldName;
+    }
+    
+    // Function to validate email
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    // Function to validate all fields
+    function validateForm() {
+        let isValid = true;
+        
+        requiredFields.forEach(fieldName => {
+            if (!validateField(fieldName)) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+    
+    // Add event listeners to all required fields
+    requiredFields.forEach(fieldName => {
+        const field = document.getElementById(fieldName);
+        if (field) {
+            field.addEventListener('blur', () => validateField(fieldName));
+            field.addEventListener('input', () => {
+                // Live validation while typing
+                validateField(fieldName);
+                // Hide uniqueness errors as user edits
+                const uniqueIdMap = {
+                    'username': 'username-unique-error',
+                    'email': 'email-unique-error',
+                    'medical_id': 'medical_id-unique-error'
+                };
+                const ue = uniqueIdMap[fieldName];
+                if (ue) {
+                    const el = document.getElementById(ue);
+                    if (el) el.style.display = 'none';
+                    field.classList.remove('error');
+                }
+            });
+        }
+    });
+    
+    // Also watch medical_id to clear uniqueness error and add success glow when filled
+    const medicalIdField = document.getElementById('medical_id');
+    if (medicalIdField) {
+        medicalIdField.addEventListener('input', function(){
+            const el = document.getElementById('medical_id-unique-error');
+            if (el) el.style.display = 'none';
+            if (this.value.trim()) {
+                markSuccess('medical_id');
+            } else {
+                this.classList.remove('success');
+            }
+        });
+    }
+    
+    // Debounced check for username availability
+    const usernameField = document.getElementById('username');
+    const usernameUniqueError = document.getElementById('username-unique-error');
+    let usernameDebounce;
+    async function checkUsernameAvailability(value){
+        try {
+            const resp = await fetch(`/api/register/username-exists?username=${encodeURIComponent(value)}`);
+            const data = await resp.json();
+            if (data && data.success) {
+                if (data.exists) {
+                    if (usernameUniqueError) usernameUniqueError.style.display = 'block';
+                    if (usernameField) {
+                        usernameField.classList.add('error');
+                        usernameField.classList.remove('success');
+                    }
+                } else {
+                    if (usernameUniqueError) usernameUniqueError.style.display = 'none';
+                    if (usernameField) markSuccess('username');
+                }
+            }
+        } catch(e) {
+            // Ignore network errors silently for UX; form submit will still validate server-side
+        }
+    }
+    if (usernameField) {
+        usernameField.addEventListener('input', function(){
+            const v = this.value.trim();
+            if (usernameUniqueError) usernameUniqueError.style.display = 'none';
+            if (!v || v.length < 4) return; // wait until minimally valid
+            clearTimeout(usernameDebounce);
+            usernameDebounce = setTimeout(() => checkUsernameAvailability(v), 350);
+        });
+        usernameField.addEventListener('blur', function(){
+            const v = this.value.trim();
+            if (!v || v.length < 4) return;
+            checkUsernameAvailability(v);
+        });
+    }
+
+    // Debounced check for email availability
+    const emailField = document.getElementById('email');
+    const emailUniqueError = document.getElementById('email-unique-error');
+    let emailDebounce;
+    async function checkEmailAvailability(value){
+        try {
+            const resp = await fetch(`/api/register/email-exists?email=${encodeURIComponent(value)}`);
+            const data = await resp.json();
+            if (data && data.success) {
+                if (data.exists) {
+                    if (emailUniqueError) emailUniqueError.style.display = 'block';
+                    if (emailField) {
+                        emailField.classList.add('error');
+                        emailField.classList.remove('success');
+                    }
+                } else {
+                    if (emailUniqueError) emailUniqueError.style.display = 'none';
+                    if (emailField) markSuccess('email');
+                }
+            }
+        } catch(e) {
+            // Ignore network errors silently for UX; form submit will still validate server-side
+        }
+    }
+    if (emailField) {
+        emailField.addEventListener('input', function(){
+            const v = this.value.trim();
+            if (emailUniqueError) emailUniqueError.style.display = 'none';
+            if (!v || !isValidEmail(v)) return; // wait until valid email format
+            clearTimeout(emailDebounce);
+            emailDebounce = setTimeout(() => checkEmailAvailability(v), 350);
+        });
+        emailField.addEventListener('blur', function(){
+            const v = this.value.trim();
+            if (!v || !isValidEmail(v)) return;
+            checkEmailAvailability(v);
+        });
+    }
+
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        // Validate form first
+        if (!validateForm()) {
+            // If validation fails, prevent submission and show errors
+            e.preventDefault();
+            requiredFields.forEach(fieldName => {
+                validateField(fieldName);
+            });
+        }
+        // If validation passes, allow normal form submission to proceed
+    });
+});
+</script>
+{% endblock %}

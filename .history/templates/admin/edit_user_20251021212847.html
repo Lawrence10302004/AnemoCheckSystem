@@ -1,0 +1,745 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users me-2"></i>
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_history') }}">
+                            <i class="fas fa-history me-2"></i>
+                            Classification History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                            <i class="fas fa-cog me-2"></i>
+                            System Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Edit User: {{ user.username }}</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">User Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" novalidate>
+                                {{ form.hidden_tag() }}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.username.label(class="form-label") }}
+                                            {{ form.username(class="form-control", id="admin_username", autocomplete="off") }}
+                                            <div class="custom-error" id="admin_username-required" style="display:none;">Username is required.</div>
+                                            <div class="custom-error" id="admin_username-length" style="display:none;">Field must be between 4 and 64 characters long.</div>
+                                            <div class="custom-error" id="admin_username-unique" style="display:none;">Username already exists.</div>
+                                            {% if form.username.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.username.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.email.label(class="form-label") }}
+                                            {{ form.email(class="form-control", id="admin_email", autocomplete="off") }}
+                                            <div class="custom-error" id="admin_email-required" style="display:none;">Email is required.</div>
+                                            <div class="custom-error" id="admin_email-format" style="display:none;">Please enter a valid email.</div>
+                                            <div class="custom-error" id="admin_email-unique" style="display:none;">Email already exists.</div>
+                                            {% if form.email.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.email.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.first_name.label(class="form-label") }}
+                                            {{ form.first_name(class="form-control", id="admin_first_name", autocomplete="off") }}
+                                            <div class="custom-error" id="admin_first_name-required" style="display:none;">First Name is required.</div>
+                                            {% if form.first_name.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.first_name.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.last_name.label(class="form-label") }}
+                                            {{ form.last_name(class="form-control", id="admin_last_name", autocomplete="off") }}
+                                            <div class="custom-error" id="admin_last_name-required" style="display:none;">Last Name is required.</div>
+                                            {% if form.last_name.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.last_name.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.gender.label(class="form-label") }}
+                                            {{ form.gender(class="form-select") }}
+                                            {% if form.gender.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.gender.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.date_of_birth.label(class="form-label") }}
+                                            <input type="date" class="form-control" id="admin_date_of_birth" name="date_of_birth">
+                                            {% if form.date_of_birth.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.date_of_birth.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.medical_id.label(class="form-label") }}
+                                            {{ form.medical_id(class="form-control", id="admin_medical_id", autocomplete="off") }}
+                                            <div class="custom-error" id="admin_medical_id-unique" style="display:none;">Medical ID already exists.</div>
+                                            {% if form.medical_id.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.medical_id.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                {{ form.is_admin(class="form-check-input") }}
+                                                {{ form.is_admin.label(class="form-check-label") }}
+                                            </div>
+                                            {% if form.is_admin.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.is_admin.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.password.label(class="form-label") }}
+                                            <div class="input-group">
+                                                {{ form.password(class="form-control", placeholder="Leave blank to keep current password", id="admin_new_password") }}
+                                                <button class="btn btn-outline-secondary" type="button" id="toggleAdminNewPassword">
+                                                    <i class="fas fa-eye" id="iconAdminNewPassword"></i>
+                                                </button>
+                                            </div>
+                                            <div class="custom-error" id="admin_new_password-min" style="display:none;">Password must be at least 8 characters.</div>
+                                            {% if form.password.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.password.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times me-1"></i>
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary" id="saveChangesBtn" disabled>
+                                        <i class="fas fa-save me-1"></i>
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">User Statistics</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>User ID:</strong> {{ user.id }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Created:</strong> {{ user.created_at }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Last Login:</strong> {{ user.last_login or 'Never' }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Role:</strong> 
+                                {% if user.is_admin %}
+                                    <span class="badge bg-danger">Administrator</span>
+                                {% else %}
+                                    <span class="badge bg-primary">User</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-info" onclick="viewUserHistory({{ user.id }})">
+                                    <i class="fas fa-history me-1"></i>
+                                    View Classification History
+                                </button>
+                                
+                                {% if not user.is_admin %}
+                                <button type="button" class="btn btn-outline-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}', '{{ user.email }}')">
+                                    <i class="fas fa-trash me-1"></i>
+                                    Delete User
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+}
+
+/* Match registration page field error/success design */
+.custom-error {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 5px;
+    display: none;
+}
+.form-control.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+.form-control.success {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+</style>
+
+<script>
+function viewUserHistory(userId) {
+    // This would typically redirect to a user-specific history page
+    window.location.href = "{{ url_for('admin_history') }}?user_id=" + userId;
+}
+
+// Client-side validation for admin username (required, length, uniqueness) mirroring registration
+document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('admin_username');
+    if (!input) return;
+    const requiredEl = document.getElementById('admin_username-required');
+    const lengthEl = document.getElementById('admin_username-length');
+    const uniqueEl = document.getElementById('admin_username-unique');
+
+    function hideAll(){
+        if (requiredEl) requiredEl.style.display = 'none';
+        if (lengthEl) lengthEl.style.display = 'none';
+        if (uniqueEl) uniqueEl.style.display = 'none';
+        input.classList.remove('error');
+        // do not remove success here to allow glow timer to finish
+    }
+
+    // success glow timer
+    let successTimer;
+    function markSuccess(){
+        input.classList.remove('error');
+        input.classList.add('success');
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(()=>{ input.classList.remove('success'); }, 3000);
+    }
+
+    let debounce;
+    async function checkUnique(v){
+        if (!v || v.length < 4) return false; // don't check until minimally valid length
+        try {
+            const res = await fetch(`/admin/api/username-exists?username=${encodeURIComponent(v)}&exclude_id={{ user.id }}`);
+            const data = await res.json();
+            return !!(data && data.success && data.exists === true);
+        } catch(e){ return false; }
+    }
+
+    async function validate(){
+        const v = (input.value || '').trim();
+        hideAll();
+        if (!v){
+            if (requiredEl) requiredEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        if (v.length < 4 || v.length > 64){
+            if (lengthEl) lengthEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        const taken = await checkUnique(v);
+        if (taken){
+            if (uniqueEl) uniqueEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        markSuccess();
+        return true;
+    }
+
+    input.addEventListener('input', function(){
+        clearTimeout(debounce);
+        debounce = setTimeout(validate, 300);
+    });
+    input.addEventListener('blur', validate);
+});
+function deleteUser(userId, username, userEmail) {
+    // Show delete confirmation modal (same behavior as classification history)
+    showDeleteConfirm({
+        title: 'Delete User',
+        message: `Are you sure you want to delete user "${username}"? This action cannot be undone and will permanently remove the user and all their data from the system.`,
+        itemName: username,
+        itemInfo: `Email: ${userEmail}`,
+        confirmText: 'Delete User',
+        itemId: userId,
+        onConfirm: function(userId) {
+            // Make AJAX call to delete the user
+            fetch(`/admin/user/${userId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success notification
+                    showSuccessNotification({
+                        title: 'User Deleted',
+                        message: data.message,
+                        details: 'The user and all their data have been permanently removed from the system.',
+                        autoClose: true,
+                        autoCloseDelay: 2000
+                    });
+                    // Redirect to users list after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/admin/users';
+                    }, 2500);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting user:', error);
+                alert('Error deleting user. Please try again.');
+            });
+        }
+    });
+}
+</script>
+<script>
+// Form validation: enable/disable Save Changes button based on required fields
+document.addEventListener('DOMContentLoaded', function(){
+    const saveBtn = document.getElementById('saveChangesBtn');
+    if (!saveBtn) return;
+    const requiredFields = [
+        'admin_username',
+        'admin_email', 
+        'admin_first_name',
+        'admin_last_name',
+        'admin_date_of_birth'
+    ];
+    
+    function validateForm() {
+        let allFilled = true;
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !String(field.value || '').trim()) {
+                allFilled = false;
+            }
+        });
+        
+        saveBtn.disabled = !allFilled;
+    }
+    
+    // Initial check
+    validateForm();
+    
+    // Re-check on input/blur
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', validateForm);
+            field.addEventListener('blur', validateForm);
+            field.addEventListener('change', validateForm);
+        }
+    });
+});
+</script>
+// Configure admin date picker: max today and preserve server value
+document.addEventListener('DOMContentLoaded', function(){
+    const dob = document.getElementById('admin_date_of_birth');
+    if (!dob) return;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dob.max = `${yyyy}-${mm}-${dd}`;
+    // Preserve pre-filled value from server if present
+    const serverDob = `{{ form.date_of_birth.data or '' }}`;
+    if (serverDob && !dob.value) {
+        dob.value = serverDob;
+    }
+});
+</script>
+<script>
+// Registration-style first name required validation
+document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('admin_first_name');
+    if (!input) return;
+    const requiredEl = document.getElementById('admin_first_name-required');
+
+    function hide(){
+        if (requiredEl) requiredEl.style.display = 'none';
+        input.classList.remove('error');
+    }
+
+    let successTimer;
+    function markSuccess(){
+        input.classList.remove('error');
+        input.classList.add('success');
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(()=>{ input.classList.remove('success'); }, 3000);
+    }
+
+    function validate(){
+        const v = (input.value || '').trim();
+        hide();
+        if (!v){
+            if (requiredEl) requiredEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        markSuccess();
+        return true;
+    }
+
+    input.addEventListener('input', validate);
+    input.addEventListener('blur', validate);
+});
+</script>
+<script>
+// Registration-style email validation for admin edit form (required, format, uniqueness)
+document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('admin_email');
+    if (!input) return;
+    const requiredEl = document.getElementById('admin_email-required');
+    const formatEl = document.getElementById('admin_email-format');
+    const uniqueEl = document.getElementById('admin_email-unique');
+
+    function hideAll(){
+        if (requiredEl) requiredEl.style.display = 'none';
+        if (formatEl) formatEl.style.display = 'none';
+        if (uniqueEl) uniqueEl.style.display = 'none';
+        input.classList.remove('error');
+    }
+
+    let successTimer;
+    function markSuccess(){
+        input.classList.remove('error');
+        input.classList.add('success');
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(()=>{ input.classList.remove('success'); }, 3000);
+    }
+
+    function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+    let debounce;
+    async function checkUnique(v){
+        if (!v || !isValidEmail(v)) return false; // only check when format is valid
+        try {
+            const res = await fetch(`/admin/api/email-exists?email=${encodeURIComponent(v)}&exclude_id={{ user.id }}`);
+            const data = await res.json();
+            return !!(data && data.success && data.exists === true);
+        } catch(e){ return false; }
+    }
+
+    async function validate(){
+        const v = (input.value || '').trim();
+        hideAll();
+        if (!v){
+            if (requiredEl) requiredEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        if (!isValidEmail(v)){
+            if (formatEl) formatEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        const taken = await checkUnique(v);
+        if (taken){
+            if (uniqueEl) uniqueEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        markSuccess();
+        return true;
+    }
+
+    input.addEventListener('input', function(){
+        clearTimeout(debounce);
+        debounce = setTimeout(validate, 300);
+    });
+    input.addEventListener('blur', validate);
+});
+</script>
+<script>
+// Registration-style last name required validation
+document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('admin_last_name');
+    if (!input) return;
+    const requiredEl = document.getElementById('admin_last_name-required');
+
+    function hide(){
+        if (requiredEl) requiredEl.style.display = 'none';
+        input.classList.remove('error');
+    }
+
+    let successTimer;
+    function markSuccess(){
+        input.classList.remove('error');
+        input.classList.add('success');
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(()=>{ input.classList.remove('success'); }, 3000);
+    }
+
+    function validate(){
+        const v = (input.value || '').trim();
+        hide();
+        if (!v){
+            if (requiredEl) requiredEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        markSuccess();
+        return true;
+    }
+
+    input.addEventListener('input', validate);
+    input.addEventListener('blur', validate);
+});
+</script>
+<script>
+// Registration-style medical ID uniqueness validation (optional field)
+document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('admin_medical_id');
+    if (!input) return;
+    const uniqueEl = document.getElementById('admin_medical_id-unique');
+
+    function hide(){
+        if (uniqueEl) uniqueEl.style.display = 'none';
+        input.classList.remove('error');
+    }
+
+    let successTimer;
+    function markSuccess(){
+        input.classList.remove('error');
+        input.classList.add('success');
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(()=>{ input.classList.remove('success'); }, 3000);
+    }
+
+    let debounce;
+    async function checkUnique(v){
+        if (!v.trim()) return false; // empty is allowed for optional field
+        try {
+            const res = await fetch(`/admin/api/medical-id-exists?medical_id=${encodeURIComponent(v)}&exclude_id={{ user.id }}`);
+            const data = await res.json();
+            return !!(data && data.success && data.exists === true);
+        } catch(e){ return false; }
+    }
+
+    async function validate(){
+        const v = (input.value || '').trim();
+        hide();
+        if (!v){
+            // optional field; always valid when empty
+            return true;
+        }
+        const taken = await checkUnique(v);
+        if (taken){
+            if (uniqueEl) uniqueEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        markSuccess();
+        return true;
+    }
+
+    input.addEventListener('input', function(){
+        clearTimeout(debounce);
+        debounce = setTimeout(validate, 300);
+    });
+    input.addEventListener('blur', validate);
+});
+</script>
+<script>
+// Admin new password length validation (min 8 chars)
+document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('admin_new_password');
+    if (!input) return;
+    const minEl = document.getElementById('admin_new_password-min');
+
+    function hide(){ if (minEl) minEl.style.display = 'none'; input.classList.remove('error'); }
+
+    let successTimer;
+    function markSuccess(){
+        input.classList.remove('error');
+        input.classList.add('success');
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(()=>{ input.classList.remove('success'); }, 3000);
+    }
+
+    function validate(){
+        const v = (input.value || '').trim();
+        hide();
+        if (!v){
+            // Blank allowed: means keep current password
+            input.classList.remove('error');
+            return true;
+        }
+        if (v.length < 8){
+            if (minEl) minEl.style.display = 'block';
+            input.classList.add('error');
+            return false;
+        }
+        markSuccess();
+        return true;
+    }
+
+    input.addEventListener('input', validate);
+    input.addEventListener('blur', validate);
+});
+</script>
+<script>
+// Toggle show/hide for admin new password (matches registration UX)
+document.addEventListener('DOMContentLoaded', function(){
+    const btn = document.getElementById('toggleAdminNewPassword');
+    const input = document.getElementById('admin_new_password');
+    const icon = document.getElementById('iconAdminNewPassword');
+    if (!btn || !input || !icon) return;
+    btn.addEventListener('click', function(){
+        if (input.type === 'password'){
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+});
+</script>
+{% endblock %}

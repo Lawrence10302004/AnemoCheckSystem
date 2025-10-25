@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Classification - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" 
+     style="position: fixed; top: 56px; bottom: 0; overflow-y: auto;">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users me-2"></i>
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_history') }}">
+                            <i class="fas fa-history me-2"></i>
+                            Classification History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                            <i class="fas fa-cog me-2"></i>
+                            System Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Edit Classification Record</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <a href="{{ url_for('admin_history') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to History
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Form -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Classification Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="username" class="form-label">User</label>
+                                            <input type="text" class="form-control" id="username" value="{{ record.username }}" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="created_at" class="form-label">Date</label>
+                                            <input type="text" class="form-control" id="created_at" value="{{ record.created_at }}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h6 class="mt-4 mb-3">CBC Values</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="wbc" class="form-label">WBC</label>
+                                            <input type="number" step="0.01" class="form-control" id="wbc" name="wbc" value="{{ record.wbc }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="rbc" class="form-label">RBC</label>
+                                            <input type="number" step="0.01" class="form-control" id="rbc" name="rbc" value="{{ record.rbc }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="hgb" class="form-label">HGB</label>
+                                            <input type="number" step="0.01" class="form-control" id="hgb" name="hgb" value="{{ record.hgb }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="hct" class="form-label">HCT</label>
+                                            <input type="number" step="0.01" class="form-control" id="hct" name="hct" value="{{ record.hct }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="mcv" class="form-label">MCV</label>
+                                            <input type="number" step="0.01" class="form-control" id="mcv" name="mcv" value="{{ record.mcv }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="mch" class="form-label">MCH</label>
+                                            <input type="number" step="0.01" class="form-control" id="mch" name="mch" value="{{ record.mch }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="mchc" class="form-label">MCHC</label>
+                                            <input type="number" step="0.01" class="form-control" id="mchc" name="mchc" value="{{ record.mchc }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="plt" class="form-label">PLT</label>
+                                            <input type="number" step="0.01" class="form-control" id="plt" name="plt" value="{{ record.plt }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h6 class="mt-4 mb-3">Differential Count</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="neutrophils" class="form-label">Neutrophils</label>
+                                            <input type="number" step="0.01" class="form-control" id="neutrophils" name="neutrophils" value="{{ record.neutrophils or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="lymphocytes" class="form-label">Lymphocytes</label>
+                                            <input type="number" step="0.01" class="form-control" id="lymphocytes" name="lymphocytes" value="{{ record.lymphocytes or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="monocytes" class="form-label">Monocytes</label>
+                                            <input type="number" step="0.01" class="form-control" id="monocytes" name="monocytes" value="{{ record.monocytes or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="eosinophils" class="form-label">Eosinophils</label>
+                                            <input type="number" step="0.01" class="form-control" id="eosinophils" name="eosinophils" value="{{ record.eosinophils or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="basophil" class="form-label">Basophil</label>
+                                            <input type="number" step="0.01" class="form-control" id="basophil" name="basophil" value="{{ record.basophil or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="immature_granulocytes" class="form-label">Immature Granulocytes</label>
+                                            <input type="number" step="0.01" class="form-control" id="immature_granulocytes" name="immature_granulocytes" value="{{ record.immature_granulocytes or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h6 class="mt-4 mb-3">Classification Results</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="predicted_class" class="form-label">Predicted Class</label>
+                                            <select class="form-select" id="predicted_class" name="predicted_class" required>
+                                                <option value="Normal" {% if record.predicted_class == 'Normal' %}selected{% endif %}>Normal</option>
+                                                <option value="Mild" {% if record.predicted_class == 'Mild' %}selected{% endif %}>Mild</option>
+                                                <option value="Moderate" {% if record.predicted_class == 'Moderate' %}selected{% endif %}>Moderate</option>
+                                                <option value="Severe" {% if record.predicted_class == 'Severe' %}selected{% endif %}>Severe</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="confidence" class="form-label">Confidence (%)</label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control" id="confidence" name="confidence" value="{{ (record.confidence * 100)|round(2) }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="recommendation" class="form-label">Recommendation</label>
+                                    <textarea class="form-control" id="recommendation" name="recommendation" rows="3">{{ record.recommendation or '' }}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ record.notes or '' }}</textarea>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <a href="{{ url_for('admin_history') }}" class="btn btn-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">Update Record</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Record Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Record ID:</strong> {{ record.id }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>User ID:</strong> {{ record.user_id }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Created:</strong> {{ record.created_at }}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Current Status:</strong>
+                                <span class="badge {% if record.predicted_class == 'Normal' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ record.predicted_class }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+}
+</style>
+{% endblock %}

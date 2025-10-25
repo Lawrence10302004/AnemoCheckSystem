@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="400" height="300" rx="10" fill="#2b3035" />
+  
+  <!-- Title -->
+  <text x="200" y="40" font-family="Arial, sans-serif" font-size="20" font-weight="bold" 
+        text-anchor="middle" fill="#ffffff">WHO Anemia Classification</text>
+  
+  <!-- Classification Chart -->
+  <rect x="50" y="70" width="300" height="180" fill="#212529" rx="5" />
+  
+  <!-- Classification Levels -->
+  <g>
+    <!-- Normal -->
+    <rect x="80" y="80" width="240" height="30" fill="#20c997" rx="3" />
+    <text x="200" y="100" font-family="Arial, sans-serif" font-size="14" font-weight="bold" 
+          text-anchor="middle" fill="#212529">Normal (≥ 12 g/dL)</text>
+    
+    <!-- Mild -->
+    <rect x="80" y="120" width="240" height="30" fill="#ffc107" rx="3" />
+    <text x="200" y="140" font-family="Arial, sans-serif" font-size="14" font-weight="bold" 
+          text-anchor="middle" fill="#212529">Mild Anemia (10-11.9 g/dL)</text>
+    
+    <!-- Moderate -->
+    <rect x="80" y="160" width="240" height="30" fill="#fd7e14" rx="3" />
+    <text x="200" y="180" font-family="Arial, sans-serif" font-size="14" font-weight="bold" 
+          text-anchor="middle" fill="#212529">Moderate Anemia (8-9.9 g/dL)</text>
+    
+    <!-- Severe -->
+    <rect x="80" y="200" width="240" height="30" fill="#dc3545" rx="3" />
+    <text x="200" y="220" font-family="Arial, sans-serif" font-size="14" font-weight="bold" 
+          text-anchor="middle" fill="#ffffff">Severe Anemia (< 8 g/dL)</text>
+  </g>
+  
+  <!-- Hemoglobin Scale -->
+  <line x1="50" y1="260" x2="350" y2="260" stroke="#6c757d" stroke-width="2" />
+  <line x1="50" y1="255" x2="50" y2="265" stroke="#6c757d" stroke-width="2" />
+  <line x1="200" y1="255" x2="200" y2="265" stroke="#6c757d" stroke-width="2" />
+  <line x1="350" y1="255" x2="350" y2="265" stroke="#6c757d" stroke-width="2" />
+  <text x="50" y="280" font-family="Arial, sans-serif" font-size="12" 
+        text-anchor="middle" fill="#adb5bd">0 g/dL</text>
+  <text x="200" y="280" font-family="Arial, sans-serif" font-size="12" 
+        text-anchor="middle" fill="#adb5bd">10 g/dL</text>
+  <text x="350" y="280" font-family="Arial, sans-serif" font-size="12" 
+        text-anchor="middle" fill="#adb5bd">20 g/dL</text>
+  
+  <!-- Red Blood Cell Icons -->
+  <circle cx="65" cy="100" r="10" fill="#dc3545" />
+  <circle cx="65" cy="140" r="8" fill="#dc3545" />
+  <circle cx="65" cy="180" r="6" fill="#dc3545" />
+  <circle cx="65" cy="220" r="4" fill="#dc3545" />
+</svg>

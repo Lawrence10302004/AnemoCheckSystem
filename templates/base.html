@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}AnemoCheck - Anemia Detection System{% endblock %}</title>
+    
+    <link rel="icon" type="image/svg+xml" href="static/img/logo.svg">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    <!-- Google Fonts Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        /* Custom color accents */
+        .navbar-brand,
+        .nav-link.active,
+        .dropdown-item:hover {
+            color: #c62828 !important; /* red accent */
+        }
+
+        .btn-primary {
+            background-color: #c62828;
+            border-color: #c62828;
+        }
+
+        .btn-primary:hover {
+            background-color: #a91e1e;
+            border-color: #a91e1e;
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-color: #c8e6c9;
+        }
+
+        .alert-danger {
+            background-color: #ffebee;
+            color: #c62828;
+            border-color: #ef9a9a;
+        }
+
+        footer {
+            background-color: #ffffff;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .text-muted {
+            color: #6c757d !important;
+        }
+
+        /* Password toggle button styling */
+        .input-group .btn-outline-secondary {
+            border-left: 0;
+            border-color: #ced4da;
+        }
+        
+        .input-group .btn-outline-secondary:hover {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+        
+        .input-group .btn-outline-secondary:focus {
+            box-shadow: 0 0 0 0.2rem rgba(198, 40, 40, 0.25);
+        }
+        
+        .input-group .form-control:focus + .btn-outline-secondary {
+            border-color: #c62828;
+        }
+    </style>
+
+    {% block head_content %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Logo" width="30" height="30" class="me-2">
+                AnemoCheck
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/history' %}active{% endif %}" href="{{ url_for('history') }}">History</a>
+                        </li>
+                        {% if not current_user.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/chat' %}active{% endif %}" href="{{ url_for('chat') }}">
+                                <i class="fas fa-comment-dots me-1"></i>Messenger
+                                <span id="chat-unread-badge" class="badge bg-danger ms-1" style="display: none;">0</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.is_admin %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">Users</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_history') }}">History</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_messenger') }}">
+                                        <i class="fas fa-comment-dots me-1"></i>Messenger
+                                        <span id="admin-chat-unread-badge" class="badge bg-danger ms-1" style="display: none;">0</span>
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">Settings</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/faq' %}active{% endif %}" href="{{ url_for('faq') }}">FAQ</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('medical_data') }}">Medical Data</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/login' %}active{% endif %}" href="{{ url_for('login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/register' %}active{% endif %}" href="{{ url_for('register') }}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer mt-auto py-3">
+        <div class="container text-center">
+            <span class="text-muted">© 2025 AnemoCheck. Created by DGM. All rights reserved.</span>
+        </div>
+    </footer>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        {% if current_user.is_authenticated %}
+        document.addEventListener("DOMContentLoaded", function() {
+            const socket = io();
+            socket.on('connect', () => {
+                console.log('WebSocket connected');
+                socket.emit('request_update');
+                updateUnreadCounts();
+            });
+            socket.on('new_classification', data => {
+                console.log('New classification received:', data);
+            });
+            socket.on('new_message', data => {
+                console.log('New message received:', data);
+                updateUnreadCounts();
+            });
+            socket.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+            });
+            
+            // Update unread counts every 30 seconds
+            setInterval(updateUnreadCounts, 30000);
+        });
+        
+        function updateUnreadCounts() {
+            fetch('/chat/unread-count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        {% if not current_user.is_admin %}
+                        const chatBadge = document.getElementById('chat-unread-badge');
+                        if (data.unread_count > 0) {
+                            if (chatBadge) {
+                                chatBadge.textContent = data.unread_count;
+                                chatBadge.style.display = 'inline';
+                            }
+                        } else {
+                            if (chatBadge) chatBadge.style.display = 'none';
+                        }
+                        {% else %}
+                        const adminChatBadge = document.getElementById('admin-chat-unread-badge');
+                        if (data.unread_count > 0) {
+                            if (adminChatBadge) {
+                                adminChatBadge.textContent = data.unread_count;
+                                adminChatBadge.style.display = 'inline';
+                            }
+                        } else {
+                            if (adminChatBadge) adminChatBadge.style.display = 'none';
+                        }
+                        {% endif %}
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating unread counts:', error);
+                });
+        }
+        {% endif %}
+    </script>
+
+    <!-- Password Toggle Functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to toggle password visibility
+            function togglePasswordVisibility(passwordFieldId, toggleButtonId, iconId) {
+                const passwordField = document.getElementById(passwordFieldId);
+                const toggleButton = document.getElementById(toggleButtonId);
+                const icon = document.getElementById(iconId);
+                
+                if (passwordField && toggleButton && icon) {
+                    toggleButton.addEventListener('click', function() {
+                        if (passwordField.type === 'password') {
+                            passwordField.type = 'text';
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        } else {
+                            passwordField.type = 'password';
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                    });
+                }
+            }
+            
+            // Initialize password toggles for login form
+            togglePasswordVisibility('loginPassword', 'toggleLoginPassword', 'loginPasswordIcon');
+            
+            // Initialize password toggles for register form
+            togglePasswordVisibility('registerPassword', 'toggleRegisterPassword', 'registerPasswordIcon');
+            togglePasswordVisibility('registerPassword2', 'toggleRegisterPassword2', 'registerPassword2Icon');
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+
+    <!-- Success Notification Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white border-0">
+                    <h5 class="modal-title" id="successModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Success
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="text-center mb-3">
+                        <div class="success-icon-container mb-3">
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem; opacity: 0.8;"></i>
+                        </div>
+                        <h6 class="text-success mb-2" id="successMessage">Operation completed successfully!</h6>
+                        <p class="text-muted mb-0" id="successDetails">
+                            The action has been completed successfully.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i>
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirm Deletion
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="text-center mb-3">
+                        <div class="delete-icon-container mb-3">
+                            <i class="fas fa-trash-alt text-danger" style="font-size: 3rem; opacity: 0.7;"></i>
+                        </div>
+                        <h6 class="text-danger mb-2">Are you sure you want to delete this item?</h6>
+                        <p class="text-muted mb-0" id="deleteConfirmMessage">
+                            This action cannot be undone and will permanently remove the item from the system.
+                        </p>
+                    </div>
+                    
+                    <!-- Item Details (optional) -->
+                    <div class="alert alert-warning border-0" id="deleteItemDetails" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <div>
+                                <strong id="deleteItemName"></strong>
+                                <br>
+                                <small id="deleteItemInfo" class="text-muted"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-1"></i>
+                        <span id="deleteBtnText">Delete</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Notification Script -->
+    <script>
+        // Show success notification modal
+        function showSuccessNotification(options) {
+            const {
+                title = 'Success',
+                message = 'Operation completed successfully!',
+                details = 'The action has been completed successfully.',
+                autoClose = false,
+                autoCloseDelay = 3000
+            } = options;
+            
+            // Set modal content
+            document.getElementById('successModalLabel').innerHTML = `<i class="fas fa-check-circle me-2"></i>${title}`;
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successDetails').textContent = details;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+            
+            // Auto close if enabled
+            if (autoClose) {
+                setTimeout(() => {
+                    modal.hide();
+                }, autoCloseDelay);
+            }
+        }
+    </script>
+
+    <!-- Delete Confirmation Script -->
+    <script>
+        let deleteCallback = null;
+        let deleteItemId = null;
+        
+        // Show delete confirmation modal
+        function showDeleteConfirm(options) {
+            const {
+                title = 'Confirm Deletion',
+                message = 'This action cannot be undone and will permanently remove the item from the system.',
+                itemName = '',
+                itemInfo = '',
+                confirmText = 'Delete',
+                onConfirm = null,
+                itemId = null
+            } = options;
+            
+            // Set modal content
+            document.getElementById('deleteConfirmModalLabel').innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${title}`;
+            document.getElementById('deleteConfirmMessage').textContent = message;
+            document.getElementById('deleteBtnText').textContent = confirmText;
+            
+            // Show item details if provided
+            const itemDetailsDiv = document.getElementById('deleteItemDetails');
+            if (itemName) {
+                document.getElementById('deleteItemName').textContent = itemName;
+                document.getElementById('deleteItemInfo').textContent = itemInfo;
+                itemDetailsDiv.style.display = 'block';
+            } else {
+                itemDetailsDiv.style.display = 'none';
+            }
+            
+            // Store callback and item ID
+            deleteCallback = onConfirm;
+            deleteItemId = itemId;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            modal.show();
+        }
+        
+        // Handle confirm delete button click
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+            if (deleteCallback) {
+                deleteCallback(deleteItemId);
+            }
+            
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+            modal.hide();
+        });
+        
+        // Reset modal when hidden
+        document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', function() {
+            deleteCallback = null;
+            deleteItemId = null;
+        });
+    </script>
+</body>
+</html>

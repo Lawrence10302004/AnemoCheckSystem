@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - Dashboard{% endblock %}
+
+{% block head_content %}
+<!-- Poppins font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        background-color: #f8fafc;
+        color: #1e293b;
+        font-family: 'Poppins', sans-serif;
+    }
+    h1, h5 { font-weight: 600; color: #000; }
+    .card {
+        border: none;
+        border-radius: 1rem;
+        transition: all 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .card-header {
+        background-color: #f9fafb !important;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 1rem 1rem 0 0 !important;
+        cursor: pointer;
+    }
+    .form-control {
+        border-radius: 0.5rem;
+        border: 1px solid #d1d5db;
+    }
+    .form-control:focus {
+        border-color: #d32f2f;
+        box-shadow: 0 0 0 0.2rem rgba(211,47,47,0.15);
+    }
+    .btn { border-radius: 0.6rem; padding: 0.6rem 1rem; font-weight: 500; }
+    .btn-success { background-color: #d32f2f; border: none; }
+    .btn-success:hover { background-color: #b71c1c; }
+    .btn-outline-primary { border-color: #d32f2f; color: #d32f2f; }
+    .btn-outline-primary:hover { background-color: #d32f2f; color: white; }
+    .btn-outline-secondary { border-color: #000; color: #000; }
+    .btn-outline-secondary:hover { background-color: #000; color: white; }
+    .btn-primary { background-color: #d32f2f; border: none; }
+    .btn-primary:hover { background-color: #b71c1c; }
+    .modal-content {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        font-family: 'Poppins', sans-serif;
+    }
+    .modal-header, .modal-footer { background-color: #f9fafb; }
+    .table thead th {
+        background-color: #f1f5f9;
+        border-bottom: 2px solid #e2e8f0;
+        font-weight: 600;
+        color: #000;
+    }
+    .profile-card { max-width: 100%; }
+    .welcome-text { color: #d32f2f; font-weight: 700; }
+
+    /* Custom error/success styling for Quick Check inputs */
+    .custom-error { background-color: #dc3545; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-top: 6px; display: none; }
+    .form-control.error { border-color: #dc3545; box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25); }
+    .form-control.success { border-color: #28a745; box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12 text-center">
+        <h1 class="display-6 mb-2 welcome-text">Welcome, {{ current_user.first_name or current_user.username }}</h1>
+        <p class="text-muted">Track your anemia status and update your medical profile easily.</p>
+    </div>
+</div>
+
+<!-- ====== Quick Check Form ====== -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-vial me-2" style="color:#d32f2f;"></i>Quick Check</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('xgbclasify') }}" method="post" id="quickCheckForm" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% for label, name, placeholder, input_type in [
+                                ('White Blood Cell Count (WBC) (10³/µL)', 'WBC', 'Enter WBC (10³/µL)', 'number'),
+                                ('Red Blood Cell Count (RBC) (million/µL)', 'RBC', 'Enter RBC (million/µL)', 'number'),
+                                ('Hemoglobin (HEMOGLOBIN) (g/dL)', 'HEMOGLOBIN', 'Enter Hemoglobin (g/dL)', 'number'),
+                                ('Hematocrit (HEMATOCRIT) (%)', 'HEMATOCRIT', 'Enter Hematocrit (%)', 'number'),
+                                ('Mean Corpuscular Volume (MCV) (fL)', 'MCV', 'Enter MCV (fL)', 'number'),
+                                ('Mean Corpuscular Hemoglobin (MCH) (pg)', 'MCH', 'Enter MCH (pg)', 'number'),
+                                ('Mean Corpuscular Hemoglobin Concentration (MCHC) (g/dL)', 'MCHC', 'Enter MCHC (g/dL)', 'number'),
+                                ('Platelet Count (PLATELET) (10³/µL)', 'PLATELET', 'Enter Platelet count (10³/µL)', 'text')
+                            ] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ label }}</label>
+                                <input class="form-control" id="{{ name }}" name="{{ name }}" placeholder="{{ placeholder }}" required type="{{ input_type }}" step="any" autocomplete="off">
+                                <div class="custom-error" id="{{ name }}-error">{{ label.split(' (')[0] }} is required.</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {% for label, name, placeholder, input_type in [
+                                ('Neutrophils (%)', 'NEUTROPHILS', 'Enter Neutrophils (%)', 'number'),
+                                ('Lymphocytes (%)', 'LYMPHOCYTES', 'Enter Lymphocytes (%)', 'number'),
+                                ('Monocytes (%)', 'MONOCYTES', 'Enter Monocytes (%)', 'number'),
+                                ('Eosinophils (%)', 'EUSONIPHILS', 'Enter Eosinophils (%)', 'number'),
+                                ('Basophils (%)', 'BASOPHIL', 'Enter Basophils (%)', 'number'),
+                                ('Immature Granulocytes (%)', 'IMMATURE_GRANULYTES', 'Enter Immature Granulocytes (%)', 'number')
+                            ] %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ label }}</label>
+                                <input class="form-control" id="{{ name }}" name="{{ name }}" placeholder="{{ placeholder }}" required type="{{ input_type }}" step="any" autocomplete="off">
+                                <div class="custom-error" id="{{ name }}-error">{{ label.split(' (')[0] }} is required.</div>
+                            </div>
+                            {% endfor %}
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" placeholder="Any additional notes (optional)" rows="2" maxlength="500" autocomplete="off"></textarea>
+                            </div>
+                            <div class="d-grid">
+                                {{ form.submit(class="btn btn-success", id="detectBtn") }}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== Medical Profile ====== -->
+<div class="row">
+  <div class="col-md-12 mb-4">
+    <div class="card shadow-sm profile-card text-center">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-user-circle me-2" style="color:#d32f2f;"></i>Medical Profile
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th><th>Gender</th><th>Date of Birth</th><th>Height</th><th>Weight</th><th>Blood Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ current_user.first_name }} {{ current_user.last_name }}</td>
+                <td>{{ current_user.gender|capitalize if current_user.gender else 'Not specified' }}</td>
+                <td>{{ current_user.date_of_birth or 'Not specified' }}</td>
+                <td>{{ medical_data.height|round|int if medical_data and medical_data.height else 'Not specified' }} cm</td>
+                <td>{{ medical_data.weight|round|int if medical_data and medical_data.weight else 'Not specified' }} kg</td>
+                <td>{{ medical_data.blood_type or 'Not specified' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-grid mt-3">
+          <a href="{{ url_for('medical_data') }}" class="btn btn-outline-primary mb-2">
+            <i class="fas fa-pen me-1"></i> Update Medical Data
+          </a>
+          <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#historyModal">
+            <i class="fas fa-clock me-2"></i>View Recent History
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Recent History Modal ====== -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="historyModalLabel"><i class="fas fa-clock me-2" style="color:#d32f2f;"></i>Recent History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Date</th><th>WBC</th><th>RBC</th><th>HGB</th><th>HCT</th>
+                <th>MCV</th><th>MCH</th><th>MCHC</th><th>PLT</th>
+                <th>NEU</th><th>LYM</th><th>MON</th><th>EOS</th><th>BAS</th><th>IGR</th>
+                <th>Classification</th><th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if history %}
+              {% for record in history %}
+              <tr class="
+                {% if record.predicted_class == 'Normal' %}table-success
+                {% elif record.predicted_class == 'Mild' %}table-warning
+                {% elif record.predicted_class in ['Moderate', 'Severe'] %}table-danger{% endif %}">
+                <td>{{ record.created_at.split()[0] if record.created_at else '' }}</td>
+                <td>{{ record.wbc }}</td><td>{{ record.rbc }}</td><td>{{ record.hgb }}</td><td>{{ record.hct }}</td>
+                <td>{{ record.mcv }}</td><td>{{ record.mch }}</td><td>{{ record.mchc }}</td><td>{{ record.plt }}</td>
+                <td>{{ record.neutrophils }}</td><td>{{ record.lymphocytes }}</td><td>{{ record.monocytes }}</td>
+                <td>{{ record.eosinophils }}</td><td>{{ record.basophil }}</td><td>{{ record.immature_granulocytes }}</td>
+                <td><span class="badge bg-secondary">{{ record.predicted_class }}</span></td>
+                <td><a href="{{ url_for('result', record_id=record.id) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a></td>
+              </tr>
+              {% endfor %}
+              {% else %}
+              <tr><td colspan="17" class="text-center">No records found</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <a href="{{ url_for('history') }}" class="btn btn-primary">View Full History</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Validation for Quick Check
+(function(){
+    const form = document.getElementById('quickCheckForm');
+    if (!form) return;
+
+    const successTimers = {};
+    function markSuccess(id){
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('error');
+        el.classList.add('success');
+        if (successTimers[id]) clearTimeout(successTimers[id]);
+        successTimers[id] = setTimeout(()=>{ el.classList.remove('success'); }, 3000);
+    }
+    function showError(id, msg){
+        const el = document.getElementById(id);
+        const err = document.getElementById(id + '-error');
+        if (el && err){
+            err.textContent = msg;
+            err.style.display = 'block';
+            el.classList.add('error');
+            el.classList.remove('success');
+        }
+    }
+    function hideError(id){
+        const el = document.getElementById(id);
+        const err = document.getElementById(id + '-error');
+        if (el && err){
+            err.style.display = 'none';
+            el.classList.remove('error');
+        }
+    }
+
+    // All required field IDs (exclude notes)
+    const ids = ['WBC','RBC','HEMOGLOBIN','HEMATOCRIT','MCV','MCH','MCHC','PLATELET','NEUTROPHILS','LYMPHOCYTES','MONOCYTES','EUSONIPHILS','BASOPHIL','IMMATURE_GRANULYTES'];
+    const numberIds = ['WBC','RBC','HEMOGLOBIN','HEMATOCRIT','MCV','MCH','MCHC','NEUTROPHILS','LYMPHOCYTES','MONOCYTES','EUSONIPHILS','BASOPHIL','IMMATURE_GRANULYTES'];
+
+    function isNumber(val){
+        return val !== '' && !isNaN(val);
+    }
+
+    function validateField(id){
+        const el = document.getElementById(id);
+        if (!el) return true;
+        const val = el.value.trim();
+        if (!val){
+            showError(id, (document.querySelector(`label[for="${id}"]`)?.textContent || id) + ' is required.');
+            return false;
+        }
+        if (numberIds.includes(id) && !isNumber(val)){
+            showError(id, 'Please enter a valid number.');
+            return false;
+        }
+        hideError(id);
+        markSuccess(id);
+        return true;
+    }
+
+    // Live validation
+    ids.forEach(id=>{
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', ()=>{ validateField(id); });
+        el.addEventListener('blur', ()=>{ validateField(id); });
+    });
+
+    form.addEventListener('submit', function(e){
+        let ok = true;
+        ids.forEach(id=>{ if (!validateField(id)) ok = false; });
+        if (!ok){
+            e.preventDefault();
+        }
+    });
+})();
+</script>
+{% endblock %}

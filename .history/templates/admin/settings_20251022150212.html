@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" 
+     style="position: fixed; top: 56px; bottom: 0; overflow-y: auto;">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_users') }}">
+                            <i class="fas fa-users me-2"></i>
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_history') }}">
+                            <i class="fas fa-history me-2"></i>
+                            Classification History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_settings') }}">
+                            <i class="fas fa-cog me-2"></i>
+                            System Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">System Settings</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetSettings()">
+                            <i class="fas fa-undo me-1"></i>
+                            Reset to Defaults
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- General Settings -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">General Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.site_name.label(class="form-label") }}
+                                            {{ form.site_name(class="form-control") }}
+                                            {% if form.site_name.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.site_name.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.site_description.label(class="form-label") }}
+                                            {{ form.site_description(class="form-control") }}
+                                            {% if form.site_description.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.site_description.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.max_users.label(class="form-label") }}
+                                            {{ form.max_users(class="form-control") }}
+                                            {% if form.max_users.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.max_users.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.session_timeout.label(class="form-label") }}
+                                            {{ form.session_timeout(class="form-control") }}
+                                            {% if form.session_timeout.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.session_timeout.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ML Model Settings -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">ML Model Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.model_confidence_threshold.label(class="form-label") }}
+                                            {{ form.model_confidence_threshold(class="form-control") }}
+                                            {% if form.model_confidence_threshold.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.model_confidence_threshold.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.model_version.label(class="form-label") }}
+                                            {{ form.model_version(class="form-control") }}
+                                            {% if form.model_version.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.model_version.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_auto_retrain(class="form-check-input") }}
+                                        {{ form.enable_auto_retrain.label(class="form-check-label") }}
+                                    </div>
+                                    {% if form.enable_auto_retrain.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.enable_auto_retrain.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Settings -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Email Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.smtp_server.label(class="form-label") }}
+                                            {{ form.smtp_server(class="form-control") }}
+                                            {% if form.smtp_server.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.smtp_server.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.smtp_port.label(class="form-label") }}
+                                            {{ form.smtp_port(class="form-control") }}
+                                            {% if form.smtp_port.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.smtp_port.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.smtp_username.label(class="form-label") }}
+                                            {{ form.smtp_username(class="form-control") }}
+                                            {% if form.smtp_username.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.smtp_username.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.smtp_password.label(class="form-label") }}
+                                            {{ form.smtp_password(class="form-control", type="password") }}
+                                            {% if form.smtp_password.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.smtp_password.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_email_notifications(class="form-check-input") }}
+                                        {{ form.enable_email_notifications.label(class="form-check-label") }}
+                                    </div>
+                                    {% if form.enable_email_notifications.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.enable_email_notifications.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Security Settings</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.password_min_length.label(class="form-label") }}
+                                            {{ form.password_min_length(class="form-control") }}
+                                            {% if form.password_min_length.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.password_min_length.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.max_login_attempts.label(class="form-label") }}
+                                            {{ form.max_login_attempts(class="form-control") }}
+                                            {% if form.max_login_attempts.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.max_login_attempts.errors %}
+                                                        <small>{{ error }}</small>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_two_factor(class="form-check-input") }}
+                                        {{ form.enable_two_factor.label(class="form-check-label") }}
+                                    </div>
+                                    {% if form.enable_two_factor.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.enable_two_factor.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">System Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>System Version:</strong> 1.0.0
+                            </div>
+                            <div class="mb-3">
+                                <strong>Python Version:</strong> 3.11.0
+                            </div>
+                            <div class="mb-3">
+                                <strong>Flask Version:</strong> 3.1.2
+                            </div>
+                            <div class="mb-3">
+                                <strong>Database:</strong> SQLite
+                            </div>
+                            <div class="mb-3">
+                                <strong>Last Backup:</strong> Today
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary" onclick="backupDatabase()">
+                                    <i class="fas fa-database me-1"></i>
+                                    Backup Database
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" onclick="clearCache()">
+                                    <i class="fas fa-broom me-1"></i>
+                                    Clear Cache
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="testEmail()">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    Test Email
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="restartSystem()">
+                                    <i class="fas fa-power-off me-1"></i>
+                                    Restart System
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #c62828;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+}
+</style>
+
+<script>
+function resetSettings() {
+    if (confirm('Are you sure you want to reset all settings to their default values? This action cannot be undone.')) {
+        // This would typically reset all form fields to their default values
+        alert('Settings reset functionality would be implemented here.');
+    }
+}
+
+function backupDatabase() {
+    // This would typically create a database backup
+    alert('Database backup functionality would be implemented here.');
+}
+
+function clearCache() {
+    // This would typically clear system cache
+    alert('Cache clearing functionality would be implemented here.');
+}
+
+function testEmail() {
+    // This would typically send a test email
+    alert('Email test functionality would be implemented here.');
+}
+
+function restartSystem() {
+    if (confirm('Are you sure you want to restart the system? This will cause temporary downtime.')) {
+        // This would typically restart the system
+        alert('System restart functionality would be implemented here.');
+    }
+}
+</script>
+{% endblock %}

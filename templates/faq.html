@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - Frequently Asked Questions{% endblock %}
+
+{% block content %}
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* 🌟 Global Font */
+body, h1, h2, h3, h4, h5, h6, p, label, a, button {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Container */
+.faq-container {
+    max-width: 900px;
+    margin: 50px auto;
+}
+
+/* Card */
+.card {
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    border: none;
+}
+
+/* Heading */
+h1.display-5 {
+    font-weight: 700;
+    color: #000; /* Black About */
+    text-align: center;
+    margin-bottom: 40px;
+}
+h1.display-5 span.highlight {
+    color: #f94144; /* Red AnemoCheck */
+}
+
+/* FAQ Title Container */
+.faq-title-container {
+    margin-bottom: 40px;
+}
+
+.faq-character {
+    max-height: 120px;
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.faq-character:hover {
+    transform: scale(1.05);
+}
+
+/* Accordion */
+.accordion-button {
+    font-weight: 600;
+    color: #000;
+    background-color: #fff;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(249,65,68,.25);
+    border: none;
+}
+.accordion-button:not(.collapsed) {
+    color: #f94144; /* Red when open */
+    background-color: #ffe5e0;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+/* Accordion Icons */
+.accordion-button i {
+    color: #f94144; /* Red icons */
+}
+
+/* Accordion Body */
+.accordion-body {
+    background-color: #fff5f5;
+    border-radius: 0 0 10px 10px;
+    padding: 1.5rem;
+}
+.accordion-body h5 {
+    font-weight: 600;
+    color: #f94144;
+    margin-bottom: 0.5rem;
+}
+.accordion-body p, .accordion-body li {
+    font-weight: 400;
+    color: #333;
+    line-height: 1.6;
+}
+.accordion-body ul li {
+    margin-bottom: 5px;
+}
+
+/* Links */
+a {
+    color: #f94144;
+    font-weight: 500;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+</style>
+
+<div class="faq-container">
+    <div class="card p-4">
+        <div class="faq-title-container d-flex align-items-center justify-content-center mb-5">
+            <img src="{{ url_for('static', filename='anemoz4.png') }}" alt="Anemoz FAQ Character" class="faq-character me-3">
+            <h1 class="display-5 mb-0">
+                Frequently Asked Questions
+            </h1>
+        </div>
+
+        <div class="accordion" id="faqAccordion">
+            <!-- General Questions -->
+            <div class="accordion-item mb-3">
+                <h2 class="accordion-header" id="headingGeneral">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGeneral" aria-expanded="true" aria-controls="collapseGeneral">
+                        <i class="fas fa-info-circle me-2"></i> General Questions
+                    </button>
+                </h2>
+                <div id="collapseGeneral" class="accordion-collapse collapse show" aria-labelledby="headingGeneral" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <div class="mb-4">
+                            <h5>What is AnemoCheck?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">AnemoCheck is a web-based application designed to detect and classify anemia based on complete blood count (CBC) results. It leverages machine learning algorithms to deliver accurate classifications and personalized recommendations.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>How accurate is AnemoCheck?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">AnemoCheck’s classification system follows guidelines for assessing anemia severity. Its machine learning model is trained to accurately categorize anemia based on CBC results. However, it is not intended to replace professional medical advice or diagnosis.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Is my data secure?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">Yes, we take data security seriously. Your personal and medical information is stored securely and is not shared with third parties. All data transmissions are encrypted, and we implement industry-standard security measures to protect your information.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anemia & Classification -->
+            <div class="accordion-item mb-3">
+                <h2 class="accordion-header" id="headingAnemia">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAnemia" aria-expanded="false" aria-controls="collapseAnemia">
+                        <i class="fas fa-heartbeat me-2"></i> Anemia & Classification
+                    </button>
+                </h2>
+                <div id="collapseAnemia" class="accordion-collapse collapse" aria-labelledby="headingAnemia" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <div class="mb-4">
+                            <h5>What is anemia?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">Anemia is a condition marked by a reduced number of red blood cells or abnormalities in complete blood count (CBC) results, which can affect the blood's ability to transport oxygen throughout the body. This may lead to symptoms such as fatigue, weakness, pale skin, and shortness of breath.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>How is anemia classified?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">Anemia is classified using trained machine learning algorithms that analyze patterns within complete blood count (CBC) results. These algorithms are designed to identify key indicators and variations associated with different types and severities of anemia. By learning from a large dataset of labeled examples, the model can accurately categorize new cases, enabling faster and more consistent classification compared to manual evaluation.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>What causes anemia?</h5>
+                            <ul>
+                                <li>Iron deficiency</li>
+                                <li>Vitamin deficiencies (B12, folate)</li>
+                                <li>Chronic diseases</li>
+                                <li>Blood loss</li>
+                                <li>Inherited conditions (e.g., sickle cell anemia, thalassemia)</li>
+                                <li>Bone marrow problems</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Using AnemoCheck -->
+            <div class="accordion-item mb-3">
+                <h2 class="accordion-header" id="headingUsage">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUsage" aria-expanded="false" aria-controls="collapseUsage">
+                        <i class="fas fa-laptop-medical me-2"></i> Using AnemoCheck
+                    </button>
+                </h2>
+                <div id="collapseUsage" class="accordion-collapse collapse" aria-labelledby="headingUsage" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <div class="mb-4">
+                            <h5>How do I get my CBC results?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">Complete Blood Count (CBC) results are typically obtained through a blood test ordered by a healthcare provider. Once you receive your CBC test results, you can input the relevant values into AnemoCheck for anemia classification.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Can I use AnemoCheck without creating an account?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">No, AnemoCheck requires account creation to use its features. This ensures that your data history is securely stored and accessible only to you, allowing you to track changes over time.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>How often should I check my CBC results?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">The frequency of checking your CBC results depends on your individual health needs. For generally healthy individuals, an annual test may be sufficient. However, if you have been diagnosed with anemia or are at risk, your healthcare provider may recommend more frequent monitoring.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Are the recommendations medically reviewed?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">AnemoCheck provides general recommendations based on WHO guidelines. These are intended as informational guidance and not as a substitute for personalized medical advice. Always consult with a healthcare provider for specific treatment recommendations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Questions -->
+            <div class="accordion-item mb-3">
+                <h2 class="accordion-header" id="headingTechnical">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTechnical" aria-expanded="false" aria-controls="collapseTechnical">
+                        <i class="fas fa-cogs me-2"></i> Technical Questions
+                    </button>
+                </h2>
+                <div id="collapseTechnical" class="accordion-collapse collapse" aria-labelledby="headingTechnical" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <div class="mb-4">
+                            <h5>What technology powers AnemoCheck?</h5>
+                            <ul>
+                                <li>Python with Flask for the web application</li>
+                                <li>SQLite for secure data storage</li>
+                                <li>Scikit-learn for the machine learning model</li>
+                                <li>Chart.js for data visualization</li>
+                                <li>WebSockets for real-time updates</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>How is the machine learning model trained?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">The model is trained using synthetic data that includes relevant complete blood count (CBC) values. Various machine learning algorithms were applied to ensure accurate and reliable anemia classification.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Is AnemoCheck available as a mobile app?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">Currently, AnemoCheck is available as a web application that works on both desktop and mobile browsers. A dedicated mobile app is planned for future releases.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Can I export my data?</h5>
+                            <p style="text-align: justify; text-indent: 1.5em;">Yes, AnemoCheck allows you to export your historical data in CSV format from the History page. This feature helps you share your data with healthcare providers if needed.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <p>If you have additional questions that aren't answered here, please feel free to 
+                <a href="mailto:support@anemocheck.com">contact our support team</a>.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

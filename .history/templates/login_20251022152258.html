@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+
+{% block title %}AnemoCheck - Login{% endblock %}
+
+{% block head_content %}
+<style>
+    .custom-error {
+        background-color: #dc3545;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        margin-top: 5px;
+        display: none;
+    }
+    
+    .form-control.error {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    
+    /* Success state for valid inputs */
+    .form-control.success {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-lg-8 col-md-10">
+        <div class="card shadow-sm p-4" style="border-radius: 12px;">
+            <div class="row g-0 align-items-center">
+                <!-- Left Column: Logo -->
+                <div class="col-md-4 d-flex justify-content-center align-items-center p-3">
+                    <img src="{{ url_for('static', filename='img/logo.svg') }}" 
+                         alt="AnemoCheck Logo" 
+                         class="img-fluid" 
+                         style="max-width: 120px;">
+                </div>
+
+                <!-- Right Column: Login Form -->
+                <div class="col-md-8 p-3">
+                    <h2 class="card-title text-center mb-4 fw-bold" style="font-family: 'Poppins', sans-serif; color: #c62828;">
+                        Log In
+                    </h2>
+                    
+                    <form method="post" action="{{ url_for('login') }}" id="loginForm" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.username.label(class="form-label fw-semibold") }}
+                            {{ form.username(class="form-control", placeholder="Enter your username", autocomplete="off", required=true) }}
+                            <div class="custom-error" id="username-error">Username is required.</div>
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label fw-semibold") }}
+                            <div class="input-group">
+                                {{ form.password(class="form-control", placeholder="Enter your password", id="loginPassword", autocomplete="off", required=true) }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleLoginPassword">
+                                    <i class="fas fa-eye" id="loginPasswordIcon"></i>
+                                </button>
+                            </div>
+                            <div class="custom-error" id="loginPassword-error">Password is required.</div>
+                            <div class="custom-error" id="auth-error" style="display: none;">Invalid username or password.</div>
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3 d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                {{ form.remember_me(class="form-check-input") }}
+                                {{ form.remember_me.label(class="form-check-label") }}
+                            </div>
+                            <a href="#" class="text-danger fw-semibold" onclick="showForgotPassword()">Forgot Password?</a>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                    
+                    <div class="mt-3 text-center">
+                        <p class="mb-0">Don't have an account? <a href="{{ url_for('register') }}" class="text-danger fw-semibold">Register here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="forgotPasswordModalLabel" style="color: #c62828;">Reset Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <p class="text-muted mb-4">Enter your email address to reset your password.</p>
+                <form id="forgotPasswordForm">
+                    <div class="mb-3">
+                        <label for="resetEmail" class="form-label fw-semibold">Email Address</label>
+                        <input type="email" class="form-control" id="resetEmail" placeholder="Enter your email address" required>
+                        <div class="custom-error" id="resetEmail-error" style="display: none;">Email is required.</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Send Reset Code</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Password Modal -->
+<div class="modal fade" id="newPasswordModal" tabindex="-1" aria-labelledby="newPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="newPasswordModalLabel" style="color: #c62828;">Create New Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <p class="text-muted mb-4">Your new password must be different from your previous password.</p>
+                <form id="newPasswordForm">
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label fw-semibold">New Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="newPassword" placeholder="Enter new password" required>
+                            <button class="btn btn-outline-secondary" type="button" id="toggleNewPassword">
+                                <i class="fas fa-eye" id="newPasswordIcon"></i>
+                            </button>
+                        </div>
+                        <div class="custom-error" id="newPassword-error" style="display: none;">Password is required.</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="confirmPassword" class="form-label fw-semibold">Confirm New Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm new password" required>
+                            <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                <i class="fas fa-eye" id="confirmPasswordIcon"></i>
+                            </button>
+                        </div>
+                        <div class="custom-error" id="confirmPassword-error" style="display: none;">Passwords do not match.</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="proceedButton">
+                            <i class="fas fa-spinner fa-spin me-2" style="display: none;"></i>
+                            Proceed to Verification
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OTP Verification Modal -->
+<div class="modal fade" id="otpVerificationModal" tabindex="-1" aria-labelledby="otpVerificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="otpVerificationModalLabel" style="color: #c62828;">Verification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <p class="text-muted mb-4">We've sent a verification code to your email.</p>
+                <form id="otpVerificationForm">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Enter Verification Code</label>
+                        <div class="d-flex justify-content-center gap-2 mb-3">
+                            <input type="text" class="form-control text-center otp-input" maxlength="1" style="width: 50px; height: 50px; font-size: 18px; font-weight: bold;">
+                            <input type="text" class="form-control text-center otp-input" maxlength="1" style="width: 50px; height: 50px; font-size: 18px; font-weight: bold;">
+                            <input type="text" class="form-control text-center otp-input" maxlength="1" style="width: 50px; height: 50px; font-size: 18px; font-weight: bold;">
+                            <input type="text" class="form-control text-center otp-input" maxlength="1" style="width: 50px; height: 50px; font-size: 18px; font-weight: bold;">
+                            <input type="text" class="form-control text-center otp-input" maxlength="1" style="width: 50px; height: 50px; font-size: 18px; font-weight: bold;">
+                            <input type="text" class="form-control text-center otp-input" maxlength="1" style="width: 50px; height: 50px; font-size: 18px; font-weight: bold;">
+                        </div>
+                        <input type="hidden" id="otpCode" name="otp_code">
+                        <div class="custom-error" id="otp-error" style="display: none;">Invalid or expired verification code. Please try again.</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="verifyButton">
+                            <i class="fas fa-spinner fa-spin me-2" style="display: none;"></i>
+                            Verify & Reset Password
+                        </button>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <p class="text-muted small">Didn't receive the code? <a href="#" class="text-danger fw-semibold" onclick="resendOTP()">Resend OTP</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('loginForm');
+    
+    // Required fields for login
+    const requiredFields = ['username', 'loginPassword'];
+    
+    // Check for flash messages and show authentication error
+    const flashMessages = document.querySelectorAll('.alert');
+    let hasAuthError = false;
+    
+    flashMessages.forEach(alert => {
+        if (alert.textContent.includes('Invalid username or password')) {
+            hasAuthError = true;
+            // Hide the flash message
+            alert.style.display = 'none';
+        }
+    });
+    
+    // Show custom authentication error if flash message exists
+    if (hasAuthError) {
+        const authError = document.getElementById('auth-error');
+        if (authError) {
+            authError.style.display = 'block';
+            // Add error styling to both fields
+            document.getElementById('username').classList.add('error');
+            document.getElementById('loginPassword').classList.add('error');
+        }
+    }
+
+    // Success timers for 5s green glow
+    const successTimers = {};
+    function markSuccess(fieldName) {
+        const field = document.getElementById(fieldName);
+        if (!field) return;
+        field.classList.remove('error');
+        field.classList.add('success');
+        if (successTimers[fieldName]) clearTimeout(successTimers[fieldName]);
+        successTimers[fieldName] = setTimeout(() => {
+            field.classList.remove('success');
+        }, 3000);
+    }
+    
+    // Function to show error
+    function showError(fieldName, message) {
+        const field = document.getElementById(fieldName);
+        const errorDiv = document.getElementById(fieldName + '-error');
+        
+        if (field && errorDiv) {
+            field.classList.add('error');
+            field.classList.remove('success');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
+    
+    // Function to hide error
+    function hideError(fieldName) {
+        const field = document.getElementById(fieldName);
+        const errorDiv = document.getElementById(fieldName + '-error');
+        
+        if (field && errorDiv) {
+            field.classList.remove('error');
+            errorDiv.style.display = 'none';
+        }
+    }
+    
+    // Function to validate individual field
+    function validateField(fieldName) {
+        const field = document.getElementById(fieldName);
+        if (!field) return true;
+        
+        const value = field.value.trim();
+        
+        if (!value) {
+            showError(fieldName, getFieldLabel(fieldName) + ' is required.');
+            return false;
+        }
+        
+        // Live prompts
+        if (fieldName === 'username') {
+            if (value.length < 4 || value.length > 64) {
+                showError(fieldName, 'Field must be between 4 and 64 characters long.');
+                return false;
+            } else {
+                hideError(fieldName);
+                markSuccess(fieldName);
+            }
+        }
+        
+        if (fieldName === 'loginPassword') {
+            if (value.length < 8) {
+                showError(fieldName, 'Password must be at least 8 characters.');
+                return false;
+            } else {
+                hideError(fieldName);
+                markSuccess(fieldName);
+            }
+        }
+        
+        return true;
+    }
+    
+    // Function to get field label
+    function getFieldLabel(fieldName) {
+        const labels = {
+            'username': 'Username',
+            'loginPassword': 'Password'
+        };
+        return labels[fieldName] || fieldName;
+    }
+    
+    // Function to validate all fields
+    function validateForm() {
+        let isValid = true;
+        
+        requiredFields.forEach(fieldName => {
+            if (!validateField(fieldName)) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+    
+    // Add event listeners to all required fields
+    requiredFields.forEach(fieldName => {
+        const field = document.getElementById(fieldName);
+        if (field) {
+            field.addEventListener('blur', () => validateField(fieldName));
+            field.addEventListener('input', () => {
+                // Live validation while typing
+                validateField(fieldName);
+                // Clear authentication error when user starts typing
+                const authError = document.getElementById('auth-error');
+                if (authError) {
+                    authError.style.display = 'none';
+                }
+            });
+        }
+    });
+    
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        // Validate form first
+        if (!validateForm()) {
+            // If validation fails, prevent submission and show errors
+            e.preventDefault();
+            requiredFields.forEach(fieldName => {
+                validateField(fieldName);
+            });
+        }
+        // If validation passes, allow normal form submission to proceed
+    });
+});
+
+// Forgot Password functionality
+let resetEmail = '';
+let newPassword = '';
+let otpTimer = null;
+
+function showForgotPassword() {
+    const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+    modal.show();
+}
+
+// Forgot Password Form Handler
+document.getElementById('forgotPasswordForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('resetEmail').value.trim();
+    const errorDiv = document.getElementById('resetEmail-error');
+    
+    if (!email) {
+        errorDiv.textContent = 'Email is required.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        errorDiv.textContent = 'Please enter a valid email address.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    errorDiv.style.display = 'none';
+    
+    try {
+        const response = await fetch('/forgot-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resetEmail = email;
+            // Close forgot password modal
+            bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
+            // Show new password modal
+            const newPasswordModal = new bootstrap.Modal(document.getElementById('newPasswordModal'));
+            newPasswordModal.show();
+        } else {
+            errorDiv.textContent = data.error || 'Failed to send reset code. Please try again.';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        errorDiv.textContent = 'An error occurred. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+});
+
+// New Password Form Handler
+document.getElementById('newPasswordForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Clear previous errors
+    document.getElementById('newPassword-error').style.display = 'none';
+    document.getElementById('confirmPassword-error').style.display = 'none';
+    
+    // Validate inputs
+    if (!password || password.length < 8) {
+        document.getElementById('newPassword-error').textContent = 'Password must be at least 8 characters.';
+        document.getElementById('newPassword-error').style.display = 'block';
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        document.getElementById('confirmPassword-error').style.display = 'block';
+        return;
+    }
+    
+    // Store password and proceed to OTP verification
+    newPassword = password;
+    
+    // Close new password modal
+    bootstrap.Modal.getInstance(document.getElementById('newPasswordModal')).hide();
+    
+    // Show OTP verification modal
+    const otpModal = new bootstrap.Modal(document.getElementById('otpVerificationModal'));
+    otpModal.show();
+    startOTPTimer();
+});
+
+// OTP Input handling
+document.querySelectorAll('.otp-input').forEach((input, index) => {
+    input.addEventListener('input', function(e) {
+        const value = e.target.value;
+        if (value && index < 5) {
+            document.querySelectorAll('.otp-input')[index + 1].focus();
+        }
+        updateOTPCode();
+    });
+    
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            document.querySelectorAll('.otp-input')[index - 1].focus();
+        }
+    });
+    
+    input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        const inputs = document.querySelectorAll('.otp-input');
+        pastedData.split('').forEach((char, i) => {
+            if (inputs[i]) {
+                inputs[i].value = char;
+            }
+        });
+        updateOTPCode();
+        if (pastedData.length === 6) {
+            document.getElementById('otpVerificationForm').dispatchEvent(new Event('submit'));
+        }
+    });
+});
+
+function updateOTPCode() {
+    const inputs = document.querySelectorAll('.otp-input');
+    const otpCode = Array.from(inputs).map(input => input.value).join('');
+    document.getElementById('otpCode').value = otpCode;
+}
+
+// OTP Verification Form Handler
+document.getElementById('otpVerificationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const otpCode = document.getElementById('otpCode').value;
+    
+    // Clear previous errors
+    document.getElementById('otp-error').style.display = 'none';
+    
+    // Validate OTP
+    if (!otpCode || otpCode.length !== 6) {
+        document.getElementById('otp-error').style.display = 'block';
+        return;
+    }
+    
+    // Show loading state
+    const verifyButton = document.getElementById('verifyButton');
+    const spinner = verifyButton.querySelector('.fa-spinner');
+    verifyButton.disabled = true;
+    spinner.style.display = 'inline-block';
+    
+    try {
+        const response = await fetch('/reset-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: resetEmail,
+                otp_code: otpCode,
+                new_password: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Success - close modal and show success message
+            bootstrap.Modal.getInstance(document.getElementById('otpVerificationModal')).hide();
+            alert('Password reset successfully! You can now login with your new password.');
+            // Clear forms and variables
+            document.getElementById('forgotPasswordForm').reset();
+            document.getElementById('newPasswordForm').reset();
+            document.getElementById('otpVerificationForm').reset();
+            resetEmail = '';
+            newPassword = '';
+        } else {
+            document.getElementById('otp-error').textContent = data.error || 'Invalid or expired verification code. Please try again.';
+            document.getElementById('otp-error').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('otp-error').textContent = 'An error occurred. Please try again.';
+        document.getElementById('otp-error').style.display = 'block';
+    } finally {
+        // Hide loading state
+        verifyButton.disabled = false;
+        spinner.style.display = 'none';
+    }
+});
+
+// Resend OTP
+async function resendOTP() {
+    if (!resetEmail) return;
+    
+    try {
+        const response = await fetch('/forgot-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: resetEmail })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            startOTPTimer();
+            alert('Verification code has been resent to your email.');
+        } else {
+            alert('Failed to resend code. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+
+// Password visibility toggles
+document.getElementById('toggleNewPassword').addEventListener('click', function() {
+    const passwordField = document.getElementById('newPassword');
+    const icon = document.getElementById('newPasswordIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+});
+
+document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+    const passwordField = document.getElementById('confirmPassword');
+    const icon = document.getElementById('confirmPasswordIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+});
+
+// OTP Timer
+function startOTPTimer() {
+    let timeLeft = 60;
+    const resendLink = document.querySelector('a[onclick="resendOTP()"]');
+    
+    if (otpTimer) clearInterval(otpTimer);
+    
+    otpTimer = setInterval(() => {
+        if (timeLeft > 0) {
+            resendLink.textContent = `Resend OTP (${timeLeft}s)`;
+            resendLink.style.pointerEvents = 'none';
+            resendLink.style.opacity = '0.5';
+            timeLeft--;
+        } else {
+            resendLink.textContent = 'Resend OTP';
+            resendLink.style.pointerEvents = 'auto';
+            resendLink.style.opacity = '1';
+            clearInterval(otpTimer);
+        }
+    }, 1000);
+}
+
+// Email validation
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+</script>
+{% endblock %}
