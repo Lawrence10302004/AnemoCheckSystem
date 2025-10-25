@@ -2019,6 +2019,10 @@ def get_combined_charts_data():
         # Get base chart data
         charts_data = db.get_admin_dashboard_charts()
         
+        # Remove 'Check' categories from severity stats as they're not meaningful
+        if 'Check' in charts_data['severity_stats']:
+            del charts_data['severity_stats']['Check']
+        
         # Normalize original gender data to standard format (Male/Female)
         normalized_gender_stats = {}
         for gender, count in charts_data['gender_stats'].items():
@@ -2057,7 +2061,9 @@ def get_combined_charts_data():
         for category, count in imported_severity_stats.items():
             # Normalize severity category to standard format
             normalized_category = normalize_severity_category(category)
-            charts_data['severity_stats'][normalized_category] = charts_data['severity_stats'].get(normalized_category, 0) + count
+            # Skip 'Check' categories as they're not meaningful for severity classification
+            if normalized_category != 'Check':
+                charts_data['severity_stats'][normalized_category] = charts_data['severity_stats'].get(normalized_category, 0) + count
         
         return charts_data
         
@@ -2088,8 +2094,6 @@ def normalize_severity_category(category):
         return 'Severe Anemia'
     elif 'severe' in category_lower:
         return 'Severe Anemia'
-    elif 'check' in category_lower:
-        return 'Check'
     else:
         return 'Other'  # Default to 'Other' for unknown categories
 
