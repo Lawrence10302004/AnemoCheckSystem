@@ -259,9 +259,9 @@ def init_db():
     ]
     
     for name, value in default_settings:
-        cursor.execute("SELECT * FROM system_settings WHERE setting_name = ?", (name,))
+        execute_sql(cursor, "SELECT * FROM system_settings WHERE setting_name = ?", (name,))
         if not cursor.fetchone():
-            cursor.execute(
+            execute_sql(cursor,
                 "INSERT INTO system_settings (setting_name, setting_value) VALUES (?, ?)",
                 (name, value)
             )
@@ -326,7 +326,7 @@ def verify_user(username, password):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    execute_sql(cursor, "SELECT * FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
     
     if user and check_password_hash(user['password_hash'], password):
@@ -349,7 +349,7 @@ def get_user(user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    execute_sql(cursor, "SELECT * FROM users WHERE id = ?", (user_id,))
     user = cursor.fetchone()
     
     conn.close()
@@ -747,7 +747,7 @@ def update_medical_data(user_id, **kwargs):
         return False, "No valid fields to update."
     
     # Check if the record exists
-    cursor.execute("SELECT id FROM medical_data WHERE user_id = ?", (user_id,))
+    execute_sql(cursor, "SELECT id FROM medical_data WHERE user_id = ?", (user_id,))
     if cursor.fetchone():
         # Update existing record
         sql = f"UPDATE medical_data SET {', '.join(set_clauses)} WHERE user_id = ?"
@@ -773,7 +773,7 @@ def get_medical_data(user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT * FROM medical_data WHERE user_id = ?", (user_id,))
+    execute_sql(cursor, "SELECT * FROM medical_data WHERE user_id = ?", (user_id,))
     data = cursor.fetchone()
     
     conn.close()
@@ -908,7 +908,7 @@ def delete_user(user_id):
     
     try:
         # Check if user exists
-        cursor.execute("SELECT id, username, is_admin FROM users WHERE id = ?", (user_id,))
+        execute_sql(cursor, "SELECT id, username, is_admin FROM users WHERE id = ?", (user_id,))
         user = cursor.fetchone()
         
         if not user:
@@ -921,22 +921,22 @@ def delete_user(user_id):
             return False, "Cannot delete admin users"
         
         # Delete user's classification history
-        cursor.execute("DELETE FROM classification_history WHERE user_id = ?", (user_id,))
+        execute_sql(cursor, "DELETE FROM classification_history WHERE user_id = ?", (user_id,))
         
         # Delete user's medical data
-        cursor.execute("DELETE FROM medical_data WHERE user_id = ?", (user_id,))
+        execute_sql(cursor, "DELETE FROM medical_data WHERE user_id = ?", (user_id,))
         
         # Delete user's chat conversations and messages
-        cursor.execute("SELECT id FROM chat_conversations WHERE user_id = ?", (user_id,))
+        execute_sql(cursor, "SELECT id FROM chat_conversations WHERE user_id = ?", (user_id,))
         conversations = cursor.fetchall()
         
         for conv in conversations:
-            cursor.execute("DELETE FROM chat_messages WHERE conversation_id = ?", (conv['id'],))
+            execute_sql(cursor, "DELETE FROM chat_messages WHERE conversation_id = ?", (conv['id'],))
         
-        cursor.execute("DELETE FROM chat_conversations WHERE user_id = ?", (user_id,))
+        execute_sql(cursor, "DELETE FROM chat_conversations WHERE user_id = ?", (user_id,))
         
         # Finally, delete the user
-        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        execute_sql(cursor, "DELETE FROM users WHERE id = ?", (user_id,))
         
         conn.commit()
         conn.close()
@@ -998,7 +998,7 @@ def get_user_by_email(email: str):
     """Get user by email, or None if not found."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    execute_sql(cursor, "SELECT * FROM users WHERE email = ?", (email,))
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -1013,7 +1013,7 @@ def get_user_by_medical_id(medical_id: str):
         return None
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE medical_id = ?", (mid,))
+    execute_sql(cursor, "SELECT * FROM users WHERE medical_id = ?", (mid,))
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -1028,7 +1028,7 @@ def get_user_by_username(username: str):
         return None
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (uname,))
+    execute_sql(cursor, "SELECT * FROM users WHERE username = ?", (uname,))
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
@@ -1191,10 +1191,10 @@ def delete_imported_file(file_id):
     cursor = conn.cursor()
     
     # Delete all data associated with this file
-    cursor.execute('DELETE FROM classification_import_data WHERE file_id = ?', (file_id,))
+    execute_sql(cursor, 'DELETE FROM classification_import_data WHERE file_id = ?', (file_id,))
     
     # Delete the file record
-    cursor.execute('DELETE FROM imported_files WHERE id = ?', (file_id,))
+    execute_sql(cursor, 'DELETE FROM imported_files WHERE id = ?', (file_id,))
     
     conn.commit()
     conn.close()
@@ -1450,7 +1450,7 @@ def store_otp_verification(email, otp_code, username, password_hash, first_name,
         print(f"Storing OTP: email={email}, code={otp_code}, expires={expires_at}")
         
         # Delete any existing OTP for this email
-        cursor.execute('DELETE FROM otp_verification WHERE email = ?', (email,))
+        execute_sql(cursor, 'DELETE FROM otp_verification WHERE email = ?', (email,))
         print(f"Deleted existing OTP records for {email}")
         
         # Insert new OTP data
@@ -1464,7 +1464,7 @@ def store_otp_verification(email, otp_code, username, password_hash, first_name,
         print(f"OTP stored successfully for {email}")
         
         # Verify it was stored
-        cursor.execute('SELECT * FROM otp_verification WHERE email = ?', (email,))
+        execute_sql(cursor, 'SELECT * FROM otp_verification WHERE email = ?', (email,))
         stored = cursor.fetchone()
         if stored:
             print(f"Verification: OTP stored with code {stored['otp_code']}, expires {stored['expires_at']}")
@@ -1588,7 +1588,7 @@ def store_password_reset_otp(email, otp_code, expires_at):
     
     try:
         # Delete any existing password reset OTP for this email
-        cursor.execute('DELETE FROM password_reset_otp WHERE email = ?', (email,))
+        execute_sql(cursor, 'DELETE FROM password_reset_otp WHERE email = ?', (email,))
         
         # Insert new password reset OTP data
         cursor.execute('''
