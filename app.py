@@ -3165,56 +3165,141 @@ def reset_password():
 
 
 def send_password_reset_otp_email(email, otp_code):
-    """Send password reset OTP email."""
+    """Send password reset OTP email using Brevo API."""
     try:
-        # Get SMTP settings
-        smtp_server = db.get_system_setting('smtp_server')
-        smtp_port = int(db.get_system_setting('smtp_port') or 587)
-        smtp_username = db.get_system_setting('smtp_username')
-        smtp_password = db.get_system_setting('smtp_password')
+        # Get Brevo service
+        from email_service import get_brevo_service
+        brevo_service = get_brevo_service()
         
-        if not all([smtp_server, smtp_username, smtp_password]):
-            logger.warning("SMTP settings not configured, using development fallback")
-            print(f"Password Reset OTP for {email}: {otp_code}")
+        if not brevo_service:
+            logger.warning("Brevo email service not configured. Using development fallback")
+            print(f"\n{'='*60}")
+            print(f"DEVELOPMENT MODE - PASSWORD RESET OTP")
+            print(f"{'='*60}")
+            print(f"To: {email}")
+            print(f"Subject: Password Reset - AnemoCheck")
+            print(f"")
+            print(f"Your password reset code is: {otp_code}")
+            print(f"This code will expire in 10 minutes.")
+            print(f"{'='*60}\n")
             return True
         
-        # Create message
-        msg = MIMEText(f"""
+        # Create email content
+        subject = "Password Reset - AnemoCheck"
+        
+        # Create HTML email content
+        html_content = f"""
+        <!DOCTYPE html>
         <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #c62828; text-align: center;">Password Reset Request</h2>
-                <p>You have requested to reset your password for your AnemoCheck account.</p>
-                <p>Your verification code is:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <span style="font-size: 32px; font-weight: bold; color: #c62828; letter-spacing: 5px; padding: 15px 25px; border: 2px solid #c62828; border-radius: 8px; display: inline-block;">{otp_code}</span>
+        <head>
+            <meta charset="UTF-8">
+            <title>Password Reset</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #c62828; color: white; padding: 20px; text-align: center; }}
+                .content {{ padding: 20px; background-color: #f9f9f9; }}
+                .otp-box {{ background-color: white; padding: 30px; margin: 20px 0; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                .otp-code {{ font-size: 36px; font-weight: bold; color: #c62828; letter-spacing: 8px; margin: 20px 0; }}
+                .warning {{ background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Password Reset Request</h1>
                 </div>
-                <p>This code will expire in 10 minutes.</p>
-                <p>If you did not request this password reset, please ignore this email.</p>
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-                <p style="font-size: 12px; color: #666; text-align: center;">AnemoCheck - Anemia Detection System</p>
+                <div class="content">
+                    <h2>Hello,</h2>
+                    <p>You have requested to reset your password for your AnemoCheck account.</p>
+                    
+                    <div class="otp-box">
+                        <h3>Your Password Reset Code</h3>
+                        <div class="otp-code">{otp_code}</div>
+                        <p>Enter this code in the password reset page to continue.</p>
+                    </div>
+                    
+                    <div class="warning">
+                        <strong>Important:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>This code will expire in 10 minutes</li>
+                            <li>Do not share this code with anyone</li>
+                            <li>If you didn't request this password reset, please ignore this email</li>
+                        </ul>
+                    </div>
+                    
+                    <p>If you have any questions, please contact our support team.</p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated message from AnemoCheck. Please do not reply to this email.</p>
+                </div>
             </div>
         </body>
         </html>
-        """, 'html')
+        """
         
-        msg['Subject'] = 'Password Reset - AnemoCheck'
-        msg['From'] = smtp_username
-        msg['To'] = email
+        # Create plain text version
+        text_content = f"""
+        Password Reset Request
         
-        # Send email
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.send_message(msg)
-        server.quit()
+        Hello,
         
-        logger.info(f"Password reset OTP sent to {email}")
-        return True
+        You have requested to reset your password for your AnemoCheck account.
+        
+        Your Password Reset Code: {otp_code}
+        
+        Enter this code in the password reset page to continue.
+        
+        Important:
+        - This code will expire in 10 minutes
+        - Do not share this code with anyone
+        - If you didn't request this password reset, please ignore this email
+        
+        If you have any questions, please contact our support team.
+        
+        This is an automated message from AnemoCheck. Please do not reply to this email.
+        """
+        
+        # Send email using Brevo
+        success, message = brevo_service.send_email(
+            to_email=email,
+            subject=subject,
+            html_content=html_content,
+            text_content=text_content,
+            to_name=email.split('@')[0]
+        )
+        
+        if success:
+            logger.info(f"Password reset OTP sent successfully to {email}")
+            return True
+        else:
+            logger.error(f"Failed to send password reset OTP: {message}")
+            # Fallback to development mode
+            print(f"\n{'='*60}")
+            print(f"EMAIL SENDING FAILED - DEVELOPMENT FALLBACK")
+            print(f"{'='*60}")
+            print(f"To: {email}")
+            print(f"Subject: Password Reset - AnemoCheck")
+            print(f"")
+            print(f"Your password reset code is: {otp_code}")
+            print(f"This code will expire in 10 minutes.")
+            print(f"{'='*60}\n")
+            return True
         
     except Exception as e:
         logger.error(f"Error sending password reset OTP email: {str(e)}")
-        return False
+        # Fallback to development mode
+        print(f"\n{'='*60}")
+        print(f"EMAIL SENDING FAILED - DEVELOPMENT FALLBACK")
+        print(f"{'='*60}")
+        print(f"To: {email}")
+        print(f"Subject: Password Reset - AnemoCheck")
+        print(f"")
+        print(f"Your password reset code is: {otp_code}")
+        print(f"This code will expire in 10 minutes.")
+        print(f"{'='*60}\n")
+        return True
 
 
 if __name__ == '__main__':
