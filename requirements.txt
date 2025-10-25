@@ -13,3 +13,4 @@ email_validator
 sib-api-v3-sdk
 requests
 xgboost
+psycopg2-binary

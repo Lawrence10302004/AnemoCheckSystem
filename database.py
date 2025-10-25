@@ -2,23 +2,27 @@
 Database Module for Anemia Classification System
 -----------------------------------------------
 This module handles database operations for storing user, admin, and classification data.
+Supports both PostgreSQL (Railway) and SQLite (local development).
 """
 
 import os
 import datetime
 from zoneinfo import ZoneInfo
-import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Database setup - use persistent volume if available
-import os
+# Detect if PostgreSQL is available (Railway provides these env vars)
+USE_POSTGRES = all(os.environ.get(key) for key in ['PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'])
 
-# Use persistent volume path if available, fallback to local
-DB_PATH = os.environ.get('DATABASE_PATH', 'anemia_classification.db')
-
-# Ensure the directory exists for persistent volume
-if DB_PATH != 'anemia_classification.db':
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+if USE_POSTGRES:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    print("Using PostgreSQL database (Railway)")
+else:
+    import sqlite3
+    DB_PATH = os.environ.get('DATABASE_PATH', 'anemia_classification.db')
+    if DB_PATH != 'anemia_classification.db':
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    print("Using SQLite database (local)")
 
 def convert_to_philippines_time(timestamp_str):
     """Convert timestamp to Philippines timezone (UTC+8)"""
@@ -51,10 +55,36 @@ def convert_to_philippines_time(timestamp_str):
         return timestamp_str  # Return original if conversion fails
 
 def get_db_connection():
-    """Get database connection."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Get database connection (PostgreSQL or SQLite)."""
+    if USE_POSTGRES:
+        conn = psycopg2.connect(
+            host=os.environ.get('PGHOST'),
+            port=os.environ.get('PGPORT', 5432),
+            database=os.environ.get('PGDATABASE'),
+            user=os.environ.get('PGUSER'),
+            password=os.environ.get('PGPASSWORD')
+        )
+        return conn
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+def get_id_type():
+    """Get the correct ID type for the database."""
+    return "SERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+def get_text_type():
+    """Get the correct text type for the database."""
+    return "VARCHAR(255)" if USE_POSTGRES else "TEXT"
+
+def get_real_type():
+    """Get the correct real type for the database."""
+    return "REAL" if USE_POSTGRES else "REAL"
+
+def get_integer_type():
+    """Get the correct integer type for the database."""
+    return "INTEGER" if USE_POSTGRES else "INTEGER"
 
 def init_db():
     """Initialize the database with necessary tables."""
@@ -62,96 +92,150 @@ def init_db():
     cursor = conn.cursor()
     
     # Create users table
-    cursor.execute('''
+    cursor.execute(f'''
     CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
+        id {get_id_type()},
+        username {get_text_type()} UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        first_name TEXT,
-        last_name TEXT,
-        gender TEXT,
-        date_of_birth TEXT,
-        medical_id TEXT UNIQUE,
-        is_admin INTEGER DEFAULT 0,
+        email {get_text_type()} UNIQUE NOT NULL,
+        first_name {get_text_type()},
+        last_name {get_text_type()},
+        gender {get_text_type()},
+        date_of_birth {get_text_type()},
+        medical_id {get_text_type()} UNIQUE,
+        is_admin {get_integer_type()} DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_login TIMESTAMP
     )
     ''')
     
     # Create classification_history table
-    cursor.execute('''
+    cursor.execute(f'''
     CREATE TABLE IF NOT EXISTS classification_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        wbc REAL NOT NULL,
-        rbc REAL NOT NULL,
-        hgb REAL NOT NULL,
-        hct REAL NOT NULL,
-        mcv REAL NOT NULL,
-        mch REAL NOT NULL,
-        mchc REAL NOT NULL,
-        plt REAL NOT NULL,
-        predicted_class TEXT NOT NULL,
-        confidence REAL NOT NULL,
-        recommendation TEXT,
-        notes TEXT,
+        id {get_id_type()},
+        user_id {get_integer_type()},
+        wbc {get_real_type()} NOT NULL,
+        rbc {get_real_type()} NOT NULL,
+        hgb {get_real_type()} NOT NULL,
+        hct {get_real_type()} NOT NULL,
+        mcv {get_real_type()} NOT NULL,
+        mch {get_real_type()} NOT NULL,
+        mchc {get_real_type()} NOT NULL,
+        plt {get_real_type()} NOT NULL,
+        predicted_class {get_text_type()} NOT NULL,
+        confidence {get_real_type()} NOT NULL,
+        recommendation {get_text_type()},
+        notes {get_text_type()},
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )
 ''')
     
     # Create medical_data table for additional patient information
-    cursor.execute('''
+    cursor.execute(f'''
     CREATE TABLE IF NOT EXISTS medical_data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER UNIQUE,
-        height REAL,
-        weight REAL,
-        blood_type TEXT,
-        medical_conditions TEXT,
-        medications TEXT,
+        id {get_id_type()},
+        user_id {get_integer_type()} UNIQUE,
+        height {get_real_type()},
+        weight {get_real_type()},
+        blood_type {get_text_type()},
+        medical_conditions {get_text_type()},
+        medications {get_text_type()},
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )
     ''')
     
     # Create a table for system settings
-    cursor.execute('''
+    cursor.execute(f'''
     CREATE TABLE IF NOT EXISTS system_settings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        setting_name TEXT UNIQUE NOT NULL,
-        setting_value TEXT,
+        id {get_id_type()},
+        setting_name {get_text_type()} UNIQUE NOT NULL,
+        setting_value {get_text_type()},
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_by INTEGER,
+        updated_by {get_integer_type()},
         FOREIGN KEY (updated_by) REFERENCES users(id)
     )
     ''')
     
     # Create classification_import_data table for imported statistics
-    cursor.execute('''
+    cursor.execute(f'''
     CREATE TABLE IF NOT EXISTS classification_import_data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        age INTEGER NOT NULL,
-        gender TEXT NOT NULL,
-        category TEXT NOT NULL,
+        id {get_id_type()},
+        age {get_integer_type()} NOT NULL,
+        gender {get_text_type()} NOT NULL,
+        category {get_text_type()} NOT NULL,
         imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        file_id INTEGER,
+        file_id {get_integer_type()},
         FOREIGN KEY (file_id) REFERENCES imported_files(id)
     )
     ''')
     
     # Create imported_files table to track imported files
-    cursor.execute('''
+    cursor.execute(f'''
     CREATE TABLE IF NOT EXISTS imported_files (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        filename TEXT NOT NULL,
-        original_filename TEXT NOT NULL,
-        total_records INTEGER NOT NULL,
+        id {get_id_type()},
+        filename {get_text_type()} NOT NULL,
+        original_filename {get_text_type()} NOT NULL,
+        total_records {get_integer_type()} NOT NULL,
         imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_applied INTEGER DEFAULT 1,
-        imported_by INTEGER,
+        is_applied {get_integer_type()} DEFAULT 1,
+        imported_by {get_integer_type()},
         FOREIGN KEY (imported_by) REFERENCES users(id)
+    )
+    ''')
+    
+    # Create otp_verification table
+    cursor.execute(f'''
+    CREATE TABLE IF NOT EXISTS otp_verification (
+        id {get_id_type()},
+        email {get_text_type()} UNIQUE NOT NULL,
+        otp_code {get_text_type()} NOT NULL,
+        username {get_text_type()} NOT NULL,
+        password_hash TEXT NOT NULL,
+        first_name {get_text_type()} NOT NULL,
+        last_name {get_text_type()} NOT NULL,
+        gender {get_text_type()} NOT NULL,
+        date_of_birth DATE NOT NULL,
+        medical_id {get_text_type()} NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        is_verified {get_integer_type()} DEFAULT 0
+    )
+    ''')
+    
+    # Create password_reset_otp table
+    cursor.execute(f'''
+    CREATE TABLE IF NOT EXISTS password_reset_otp (
+        id {get_id_type()},
+        email {get_text_type()} NOT NULL,
+        otp_code {get_text_type()} NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        is_verified {get_integer_type()} DEFAULT 0
+    )
+    ''')
+    
+    # Create chat_conversations table
+    cursor.execute(f'''
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+        id {get_id_type()},
+        user_id {get_integer_type()} NOT NULL,
+        title {get_text_type()},
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    ''')
+    
+    # Create chat_messages table
+    cursor.execute(f'''
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id {get_id_type()},
+        conversation_id {get_integer_type()} NOT NULL,
+        role {get_text_type()} NOT NULL,
+        content {get_text_type()} NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id)
     )
     ''')
     
@@ -1202,10 +1286,16 @@ def migrate_database():
     cursor = conn.cursor()
     
     # Check if imported_files table exists
-    cursor.execute("""
-        SELECT name FROM sqlite_master 
-        WHERE type='table' AND name='imported_files'
-    """)
+    if USE_POSTGRES:
+        cursor.execute("""
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = 'imported_files'
+        """)
+    else:
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='imported_files'
+        """)
     
     if not cursor.fetchone():
         # Create imported_files table
@@ -1233,10 +1323,16 @@ def migrate_database():
         print("Database migrated successfully - added imported_files table")
     
     # Check if otp_verification table exists
-    cursor.execute("""
-        SELECT name FROM sqlite_master 
-        WHERE type='table' AND name='otp_verification'
-    """)
+    if USE_POSTGRES:
+        cursor.execute("""
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = 'otp_verification'
+        """)
+    else:
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='otp_verification'
+        """)
     
     if not cursor.fetchone():
         # Create otp_verification table
@@ -1262,10 +1358,16 @@ def migrate_database():
         print("Database migrated successfully - added otp_verification table")
     
     # Check if password_reset_otp table exists
-    cursor.execute("""
-        SELECT name FROM sqlite_master 
-        WHERE type='table' AND name='password_reset_otp'
-    """)
+    if USE_POSTGRES:
+        cursor.execute("""
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = 'password_reset_otp'
+        """)
+    else:
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='password_reset_otp'
+        """)
     
     if not cursor.fetchone():
         # Create password_reset_otp table
@@ -1520,10 +1622,20 @@ def update_user_password_by_email(email, password_hash):
 
 
 # Initialize the database when this module is imported
-if not os.path.exists(DB_PATH):
-    init_db()
+if USE_POSTGRES:
+    # For PostgreSQL, always run init_db to ensure tables exist
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Error initializing PostgreSQL database: {e}")
+        # Try migration as fallback
+        migrate_database()
 else:
-    # Run migration for existing databases
-    migrate_database()
+    # For SQLite, check if database file exists
+    if not os.path.exists(DB_PATH):
+        init_db()
+    else:
+        # Run migration for existing databases
+        migrate_database()
 
 
