@@ -312,7 +312,7 @@ def create_user(username, password=None, email=None, first_name=None, last_name=
         # Use provided password_hash or generate from password
         if password_hash is None:
             password_hash = generate_password_hash(password)
-        cursor.execute(
+        execute_sql(cursor,
             """
             INSERT INTO users 
             (username, password_hash, email, first_name, last_name, gender, 
@@ -326,21 +326,32 @@ def create_user(username, password=None, email=None, first_name=None, last_name=
         user_id = cursor.lastrowid
         
         # Create empty medical_data entry for the user
-        cursor.execute(
+        execute_sql(cursor,
             "INSERT INTO medical_data (user_id) VALUES (?)",
             (user_id,)
         )
         conn.commit()
         return True, user_id
-    except sqlite3.IntegrityError as e:
-        if "UNIQUE constraint failed: users.username" in str(e):
-            return False, "Username already exists."
-        elif "UNIQUE constraint failed: users.email" in str(e):
-            return False, "Email already exists."
-        elif "UNIQUE constraint failed: users.medical_id" in str(e):
-            return False, "Medical ID already exists."
+    except Exception as e:
+        error_msg = str(e)
+        if USE_POSTGRES:
+            if "duplicate key value violates unique constraint" in error_msg and "users_username_key" in error_msg:
+                return False, "Username already exists."
+            elif "duplicate key value violates unique constraint" in error_msg and "users_email_key" in error_msg:
+                return False, "Email already exists."
+            elif "duplicate key value violates unique constraint" in error_msg and "users_medical_id_key" in error_msg:
+                return False, "Medical ID already exists."
+            else:
+                return False, f"Database error: {error_msg}"
         else:
-            return False, str(e)
+            if "UNIQUE constraint failed: users.username" in error_msg:
+                return False, "Username already exists."
+            elif "UNIQUE constraint failed: users.email" in error_msg:
+                return False, "Email already exists."
+            elif "UNIQUE constraint failed: users.medical_id" in error_msg:
+                return False, "Medical ID already exists."
+            else:
+                return False, f"Database error: {error_msg}"
     finally:
         conn.close()
 
