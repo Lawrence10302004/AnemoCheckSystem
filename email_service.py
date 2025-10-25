@@ -112,6 +112,11 @@ def get_brevo_service():
         sender_name = db.get_system_setting('brevo_sender_name') or "AnemoCheck"
         enable_notifications = db.get_system_setting('enable_email_notifications') == 'true'
         
+        # Debug logging
+        logger.info(f"Brevo service check - enable_notifications: {enable_notifications}")
+        logger.info(f"Brevo service check - api_key exists: {bool(api_key)}")
+        logger.info(f"Brevo service check - sender_email: {sender_email}")
+        
         if not enable_notifications or not api_key or not sender_email:
             logger.warning("Brevo email service not configured or disabled")
             return None
