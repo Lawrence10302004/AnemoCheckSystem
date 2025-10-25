@@ -15,6 +15,7 @@ import logging
 import random
 import string
 from datetime import datetime, timedelta
+from timezone_utils import get_philippines_time, format_philippines_time, get_philippines_time_for_db, get_philippines_time_plus_minutes
 # from email.mime.text import MIMEText
 # from email.mime.multipart import MIMEMultipart
 
@@ -283,7 +284,7 @@ def register():
     if form.validate_on_submit():
         # Generate OTP and store user data temporarily
         otp_code = generate_otp()
-        expires_at = datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+        expires_at = get_philippines_time_plus_minutes(OTP_EXPIRY_MINUTES)
         
         # Store OTP verification data
         success = db.store_otp_verification(
@@ -413,8 +414,7 @@ def resend_verification_otp():
         otp_code = generate_otp()
         
         # Update OTP in database (set expiry to 10 minutes from now)
-        from datetime import datetime, timedelta
-        expires_at = datetime.now() + timedelta(minutes=10)
+        expires_at = get_philippines_time_plus_minutes(10)
         otp_updated = db.update_otp_code(email, otp_code, expires_at)
         
         if not otp_updated:
@@ -461,9 +461,13 @@ def dashboard():
         rbc_values.append(record['rbc'])
         mcv_values.append(record['mcv'])
         hct_values.append(record['hct'])
-        # Convert SQLite timestamp string to datetime
-        created_at = datetime.strptime(record['created_at'], '%Y-%m-%d %H:%M:%S')
-        dates.append(created_at.strftime('%Y-%m-%d'))
+        # Convert timestamp to Philippines time for display
+        from timezone_utils import parse_philippines_time
+        created_at = parse_philippines_time(record['created_at'])
+        if created_at:
+            dates.append(created_at.strftime('%Y-%m-%d'))
+        else:
+            dates.append(record['created_at'][:10])  # Fallback to first 10 chars
     
     # Reverse lists to show chronological order
     hemoglobin_values.reverse()
@@ -609,7 +613,7 @@ def classify():
             'predicted_class': result['predicted_class'],
             'confidence': result['confidence'],
             'recommendation': result['recommendation'],
-            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'created_at': get_philippines_time_for_db(),
             'notes': notes,
             'user_id': current_user.id,
             'username': current_user.username
@@ -751,7 +755,7 @@ def rfcclasify():
         'predicted_class': predicted_label,
         'confidence': confidence / 100,
         'recommendation': final_recommendation,
-        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'created_at': get_philippines_time_for_db(),
         'notes': notes
     }
 
@@ -903,7 +907,7 @@ def xgbclasify():
         'predicted_class': predicted_label,
         'confidence': convert_numpy_types(confidence_scores),
         'recommendation': final_recommendation,
-        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'created_at': get_philippines_time_for_db(),
         'notes': notes,
         'age': age,
         'gender': current_user.gender
@@ -932,7 +936,7 @@ def xgbclasify():
                 'mch': float(mch),
                 'mchc': float(mchc),
                 'plt': float(plt),
-                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': get_philippines_time_for_db(),
                 'notes': notes
             }
             
@@ -1130,7 +1134,7 @@ def xgb_try_clasify():
         'confidence': confidence_scores,
         'recommendation': final_recommendation,
         'definition': cbc_results_summary[predicted_label],
-        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'created_at': get_philippines_time_for_db(),
     }
 
     
@@ -1750,7 +1754,7 @@ def export_classification_stats():
     
     # Write header
     writer.writerow(['Classification Statistics Export'])
-    writer.writerow(['Generated on', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+    writer.writerow(['Generated on', get_philippines_time_for_db()])
     writer.writerow(['Data includes', 'Original system data + Imported CSV data'])
     writer.writerow([])
     
@@ -2865,8 +2869,9 @@ def admin_check_new_messages():
             # Check if message is from user (not admin) and recent
             if latest_message['sender_id'] != current_user.id:
                 # Check if message is within last 5 minutes
-                message_time = datetime.fromisoformat(latest_message['created_at'].replace('Z', '+00:00'))
-                if (datetime.now() - message_time).seconds < 300:  # 5 minutes
+                from timezone_utils import parse_philippines_time
+                message_time = parse_philippines_time(latest_message['created_at'])
+                if message_time and (get_philippines_time() - message_time).seconds < 300:  # 5 minutes
                     new_messages.append({
                         'user_id': conv['user_id'],
                         'username': conv['username'],
@@ -3114,7 +3119,7 @@ def forgot_password():
         
         # Generate OTP
         otp_code = generate_otp()
-        expires_at = datetime.now() + timedelta(minutes=10)
+        expires_at = get_philippines_time_plus_minutes(10)
         
         # Store OTP
         if db.store_password_reset_otp(email, otp_code, expires_at):

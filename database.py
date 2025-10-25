@@ -26,33 +26,8 @@ else:
 
 def convert_to_philippines_time(timestamp_str):
     """Convert timestamp to Philippines timezone (UTC+8)"""
-    try:
-        # Parse the timestamp string
-        if isinstance(timestamp_str, str):
-            # Handle different timestamp formats
-            if 'T' in timestamp_str:
-                # ISO format with T
-                dt = datetime.datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-            else:
-                # SQLite format
-                dt = datetime.datetime.fromisoformat(timestamp_str)
-        else:
-            # Already a datetime object
-            dt = timestamp_str
-        
-        # Convert to Philippines timezone
-        ph_tz = ZoneInfo('Asia/Manila')
-        if dt.tzinfo is None:
-            # Assume UTC if no timezone info
-            dt = dt.replace(tzinfo=ZoneInfo('UTC'))
-        
-        ph_time = dt.astimezone(ph_tz)
-        
-        # Format as readable string
-        return ph_time.strftime('%Y-%m-%d %H:%M:%S %Z')
-    except Exception as e:
-        print(f"Error converting timestamp: {e}")
-        return timestamp_str  # Return original if conversion fails
+    from timezone_utils import format_philippines_time_display
+    return format_philippines_time_display(timestamp_str)
 
 def get_db_connection():
     """Get database connection (PostgreSQL or SQLite)."""
@@ -335,9 +310,10 @@ def verify_user(username, password):
     
     if user and check_password_hash(user['password_hash'], password):
         # Update last login time
+        from timezone_utils import get_philippines_time_for_db
         cursor.execute(
             "UPDATE users SET last_login = ? WHERE id = ?",
-            (datetime.datetime.now(), user['id'])
+            (get_philippines_time_for_db(), user['id'])
         )
         conn.commit()
         conn.close()
@@ -617,13 +593,14 @@ def update_system_setting(setting_name, setting_value, updated_by=None):
     
     try:
         # Use INSERT OR REPLACE to handle both new and existing settings
+        from timezone_utils import get_philippines_time_for_db
         cursor.execute(
             """
             INSERT OR REPLACE INTO system_settings 
             (setting_name, setting_value, updated_at, updated_by) 
             VALUES (?, ?, ?, ?)
             """,
-            (setting_name, setting_value, datetime.datetime.now(), updated_by)
+            (setting_name, setting_value, get_philippines_time_for_db(), updated_by)
         )
         
         conn.commit()
@@ -732,7 +709,8 @@ def update_medical_data(user_id, **kwargs):
             values.append(value)
     
     set_clauses.append('updated_at = ?')
-    values.append(datetime.datetime.now())
+    from timezone_utils import get_philippines_time_for_db
+    values.append(get_philippines_time_for_db())
     
     if not set_clauses:
         conn.close()
