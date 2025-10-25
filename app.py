@@ -2019,10 +2019,16 @@ def get_combined_charts_data():
         # Get base chart data
         charts_data = db.get_admin_dashboard_charts()
         
-        # Normalize original gender data to title case
+        # Normalize original gender data to standard format (Male/Female)
         normalized_gender_stats = {}
         for gender, count in charts_data['gender_stats'].items():
-            normalized_gender = gender.title()
+            # Standardize gender labels
+            if gender.lower() in ['m', 'male']:
+                normalized_gender = 'Male'
+            elif gender.lower() in ['f', 'female']:
+                normalized_gender = 'Female'
+            else:
+                normalized_gender = gender.title()
             normalized_gender_stats[normalized_gender] = normalized_gender_stats.get(normalized_gender, 0) + count
         charts_data['gender_stats'] = normalized_gender_stats
         
@@ -2038,13 +2044,20 @@ def get_combined_charts_data():
         
         # Merge gender data with proper normalization
         for gender, count in imported_gender_stats.items():
-            # Normalize gender to title case to match existing data
-            normalized_gender = gender.title()
+            # Standardize gender labels to avoid duplicates
+            if gender.lower() in ['m', 'male']:
+                normalized_gender = 'Male'
+            elif gender.lower() in ['f', 'female']:
+                normalized_gender = 'Female'
+            else:
+                normalized_gender = gender.title()
             charts_data['gender_stats'][normalized_gender] = charts_data['gender_stats'].get(normalized_gender, 0) + count
         
-        # Merge severity data (already normalized during import)
+        # Merge severity data with proper normalization
         for category, count in imported_severity_stats.items():
-            charts_data['severity_stats'][category] = charts_data['severity_stats'].get(category, 0) + count
+            # Normalize severity category to standard format
+            normalized_category = normalize_severity_category(category)
+            charts_data['severity_stats'][normalized_category] = charts_data['severity_stats'].get(normalized_category, 0) + count
         
         return charts_data
         
@@ -2075,8 +2088,10 @@ def normalize_severity_category(category):
         return 'Severe Anemia'
     elif 'severe' in category_lower:
         return 'Severe Anemia'
+    elif 'check' in category_lower:
+        return 'Check'
     else:
-        return category.title()  # Return as-is if no match
+        return 'Other'  # Default to 'Other' for unknown categories
 
 
 @app.route('/admin/export/users.csv')
