@@ -397,7 +397,7 @@ def verify_user(username, password):
     if user and check_password_hash(user['password_hash'], password):
         # Update last login time
         from timezone_utils import get_philippines_time_for_db
-        cursor.execute(
+        execute_sql(cursor,
             "UPDATE users SET last_login = ? WHERE id = ?",
             (get_philippines_time_for_db(), user['id'])
         )
