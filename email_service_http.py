@@ -1,30 +1,21 @@
 """
-Email service module using Brevo (formerly Sendinblue) API.
-Replaces SMTP functionality with Brevo's transactional email API.
+Alternative email service using HTTP requests to Brevo API.
+This is a fallback implementation that doesn't require the SDK.
 """
 
+import requests
 import logging
 from typing import Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
-# Try to import Brevo SDK, fallback to HTTP if not available
-try:
-    from sib_api_v3_sdk import TransactionalEmailsApi, SendSmtpEmail, SendSmtpEmailTo, SendSmtpEmailSender
-    from sib_api_v3_sdk.rest import ApiException
-    import sib_api_v3_sdk
-    SDK_AVAILABLE = True
-except ImportError:
-    logger.warning("Brevo SDK not available, will use HTTP fallback")
-    SDK_AVAILABLE = False
 
-
-class BrevoEmailService:
-    """Email service using Brevo API for sending transactional emails."""
+class BrevoHTTPEmailService:
+    """Email service using direct HTTP requests to Brevo API."""
     
     def __init__(self, api_key: str, sender_email: str, sender_name: str = "AnemoCheck"):
         """
-        Initialize Brevo email service.
+        Initialize Brevo HTTP email service.
         
         Args:
             api_key: Brevo API key
@@ -34,17 +25,12 @@ class BrevoEmailService:
         self.api_key = api_key
         self.sender_email = sender_email
         self.sender_name = sender_name
-        
-        # Configure API client
-        configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key['api-key'] = api_key
-        
-        self.api_instance = TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+        self.api_url = "https://api.brevo.com/v3/smtp/email"
     
     def send_email(self, to_email: str, subject: str, html_content: str, 
                    text_content: str, to_name: Optional[str] = None) -> Tuple[bool, str]:
         """
-        Send email using Brevo API.
+        Send email using Brevo HTTP API.
         
         Args:
             to_email: Recipient email address
@@ -57,51 +43,50 @@ class BrevoEmailService:
             Tuple of (success: bool, message: str)
         """
         try:
-            # Create sender
-            sender = SendSmtpEmailSender(
-                email=self.sender_email,
-                name=self.sender_name
-            )
+            headers = {
+                "accept": "application/json",
+                "api-key": self.api_key,
+                "content-type": "application/json"
+            }
             
-            # Create recipient
-            to = SendSmtpEmailTo(
-                email=to_email,
-                name=to_name or to_email.split('@')[0]
-            )
+            data = {
+                "sender": {
+                    "email": self.sender_email,
+                    "name": self.sender_name
+                },
+                "to": [
+                    {
+                        "email": to_email,
+                        "name": to_name or to_email.split('@')[0]
+                    }
+                ],
+                "subject": subject,
+                "htmlContent": html_content,
+                "textContent": text_content
+            }
             
-            # Create email object
-            send_smtp_email = SendSmtpEmail(
-                sender=sender,
-                to=[to],
-                subject=subject,
-                html_content=html_content,
-                text_content=text_content
-            )
+            response = requests.post(self.api_url, json=data, headers=headers)
             
-            # Send email
-            api_response = self.api_instance.send_transac_email(send_smtp_email)
-            
-            logger.info(f"Email sent successfully to {to_email}. Message ID: {api_response.message_id}")
-            return True, "Email sent successfully"
-            
-        except ApiException as e:
-            error_msg = f"Brevo API error: {e.reason} - {e.body}"
-            logger.error(error_msg)
-            return False, error_msg
-            
+            if response.status_code == 201:
+                logger.info(f"Email sent successfully to {to_email}")
+                return True, "Email sent successfully"
+            else:
+                error_msg = f"Brevo API error: {response.status_code} - {response.text}"
+                logger.error(error_msg)
+                return False, error_msg
+                
         except Exception as e:
             error_msg = f"Error sending email: {str(e)}"
             logger.error(error_msg)
             return False, error_msg
 
 
-def get_brevo_service():
+def get_brevo_http_service() -> Optional[BrevoHTTPEmailService]:
     """
-    Get configured Brevo email service from database settings.
-    Uses SDK if available, otherwise falls back to HTTP implementation.
+    Get configured Brevo HTTP email service from database settings.
     
     Returns:
-        BrevoEmailService instance or None if not configured
+        BrevoHTTPEmailService instance or None if not configured
     """
     try:
         import database as db
@@ -116,21 +101,16 @@ def get_brevo_service():
             logger.warning("Brevo email service not configured or disabled")
             return None
         
-        if SDK_AVAILABLE:
-            return BrevoEmailService(api_key, sender_email, sender_name)
-        else:
-            # Use HTTP fallback
-            from email_service_http import BrevoHTTPEmailService
-            return BrevoHTTPEmailService(api_key, sender_email, sender_name)
+        return BrevoHTTPEmailService(api_key, sender_email, sender_name)
         
     except Exception as e:
-        logger.error(f"Error initializing Brevo service: {str(e)}")
+        logger.error(f"Error initializing Brevo HTTP service: {str(e)}")
         return None
 
 
-def send_result_email_brevo(record_id: int, user_email: str, user_name: str, record_data: dict) -> Tuple[bool, str]:
+def send_result_email_brevo_http(record_id: int, user_email: str, user_name: str, record_data: dict) -> Tuple[bool, str]:
     """
-    Send anemia test result email using Brevo API.
+    Send anemia test result email using Brevo HTTP API.
     
     Args:
         record_id: Record ID
@@ -142,8 +122,8 @@ def send_result_email_brevo(record_id: int, user_email: str, user_name: str, rec
         Tuple of (success: bool, message: str)
     """
     try:
-        # Get Brevo service
-        brevo_service = get_brevo_service()
+        # Get Brevo HTTP service
+        brevo_service = get_brevo_http_service()
         if not brevo_service:
             return False, "Email service not configured or disabled"
         
@@ -257,7 +237,7 @@ def send_result_email_brevo(record_id: int, user_email: str, user_name: str, rec
         For support, please contact your healthcare provider
         """
         
-        # Send email using Brevo
+        # Send email using Brevo HTTP API
         return brevo_service.send_email(
             to_email=user_email,
             subject=subject,
@@ -267,13 +247,13 @@ def send_result_email_brevo(record_id: int, user_email: str, user_name: str, rec
         )
         
     except Exception as e:
-        logger.error(f"Error sending result email via Brevo: {str(e)}")
+        logger.error(f"Error sending result email via Brevo HTTP: {str(e)}")
         return False, f"Error sending email: {str(e)}"
 
 
-def send_otp_email_brevo(email: str, otp_code: str, username: str) -> bool:
+def send_otp_email_brevo_http(email: str, otp_code: str, username: str) -> bool:
     """
-    Send OTP code email using Brevo API.
+    Send OTP code email using Brevo HTTP API.
     
     Args:
         email: Recipient email address
@@ -284,10 +264,10 @@ def send_otp_email_brevo(email: str, otp_code: str, username: str) -> bool:
         bool: True if email sent successfully, False otherwise
     """
     try:
-        # Get Brevo service
-        brevo_service = get_brevo_service()
+        # Get Brevo HTTP service
+        brevo_service = get_brevo_http_service()
         if not brevo_service:
-            logger.warning("Brevo email service not configured. Using development mode.")
+            logger.warning("Brevo HTTP email service not configured. Using development mode.")
             # Development fallback
             print(f"\n{'='*60}")
             print(f"DEVELOPMENT MODE - OTP EMAIL")
@@ -380,7 +360,7 @@ def send_otp_email_brevo(email: str, otp_code: str, username: str) -> bool:
         This is an automated message from AnemoCheck. Please do not reply to this email.
         """
         
-        # Send email using Brevo
+        # Send email using Brevo HTTP API
         success, message = brevo_service.send_email(
             to_email=email,
             subject=subject,
@@ -410,7 +390,7 @@ def send_otp_email_brevo(email: str, otp_code: str, username: str) -> bool:
             return True
             
     except Exception as e:
-        logger.error(f"Error sending OTP email via Brevo: {str(e)}")
+        logger.error(f"Error sending OTP email via Brevo HTTP: {str(e)}")
         # Fallback to development mode
         print(f"\n{'='*60}")
         print(f"EMAIL SENDING FAILED - DEVELOPMENT FALLBACK")
