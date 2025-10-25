@@ -67,6 +67,21 @@ def get_integer_type():
     """Get the correct integer type for the database."""
     return "INTEGER" if USE_POSTGRES else "INTEGER"
 
+def execute_sql(cursor, query, params=None):
+    """Execute SQL with proper parameter binding for the database type."""
+    if USE_POSTGRES:
+        # PostgreSQL uses %s placeholders
+        if params:
+            cursor.execute(query.replace('?', '%s'), params)
+        else:
+            cursor.execute(query.replace('?', '%s'))
+    else:
+        # SQLite uses ? placeholders
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+
 def init_db():
     """Initialize the database with necessary tables."""
     conn = get_db_connection()
@@ -581,15 +596,15 @@ def get_system_setting(setting_name):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute(
-        "SELECT setting_value FROM system_settings WHERE setting_name = ?",
-        (setting_name,)
-    )
-    
-    row = cursor.fetchone()
-    conn.close()
-    
-    return row['setting_value'] if row else None
+    try:
+        execute_sql(cursor, "SELECT setting_value FROM system_settings WHERE setting_name = ?", (setting_name,))
+        row = cursor.fetchone()
+        return row['setting_value'] if row else None
+    except Exception as e:
+        print(f"Error getting system setting {setting_name}: {e}")
+        return None
+    finally:
+        conn.close()
 
 
 def update_system_setting(setting_name, setting_value, updated_by=None):
@@ -598,19 +613,28 @@ def update_system_setting(setting_name, setting_value, updated_by=None):
     cursor = conn.cursor()
     
     try:
-        # Use INSERT OR REPLACE to handle both new and existing settings
         from timezone_utils import get_philippines_time_for_db
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO system_settings 
-            (setting_name, setting_value, updated_at, updated_by) 
-            VALUES (?, ?, ?, ?)
-            """,
-            (setting_name, setting_value, get_philippines_time_for_db(), updated_by)
-        )
+        
+        if USE_POSTGRES:
+            # PostgreSQL uses ON CONFLICT
+            execute_sql(cursor, """
+                INSERT INTO system_settings 
+                (setting_name, setting_value, updated_at, updated_by) 
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (setting_name) DO UPDATE SET 
+                setting_value = EXCLUDED.setting_value, 
+                updated_at = EXCLUDED.updated_at,
+                updated_by = EXCLUDED.updated_by
+            """, (setting_name, setting_value, get_philippines_time_for_db(), updated_by))
+        else:
+            # SQLite uses INSERT OR REPLACE
+            execute_sql(cursor, """
+                INSERT OR REPLACE INTO system_settings 
+                (setting_name, setting_value, updated_at, updated_by) 
+                VALUES (?, ?, ?, ?)
+            """, (setting_name, setting_value, get_philippines_time_for_db(), updated_by))
         
         conn.commit()
-        conn.close()
         return True
         
     except Exception as e:
