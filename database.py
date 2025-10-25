@@ -260,17 +260,38 @@ def init_db():
     ''')
     
     # Insert default admin user if not exists
-    cursor.execute("SELECT * FROM users WHERE username = 'admin'")
-    if not cursor.fetchone():
-        create_user(
-            username='admin',
-            password='admin123',  # This should be changed immediately in production
-            email='admin@anemocheck.com',
-            first_name='System',
-            last_name='Administrator',
-            is_admin=1
-        )
-        print("Default admin user created.")
+    try:
+        print("Checking for admin user...")
+        execute_sql(cursor, "SELECT * FROM users WHERE username = ?", ('admin',))
+        admin_exists = cursor.fetchone()
+        
+        if not admin_exists:
+            print("Creating default admin user...")
+            try:
+                # Create admin user directly with SQL to avoid function call issues
+                admin_password_hash = generate_password_hash('admin123')
+                execute_sql(cursor, """
+                    INSERT INTO users 
+                    (username, password_hash, email, first_name, last_name, is_admin)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, ('admin', admin_password_hash, 'admin@anemocheck.com', 'System', 'Administrator', 1))
+                
+                # Get the admin user ID
+                admin_user_id = cursor.lastrowid
+                
+                # Create medical_data entry for admin
+                execute_sql(cursor, "INSERT INTO medical_data (user_id) VALUES (?)", (admin_user_id,))
+                
+                conn.commit()
+                print("Default admin user created successfully!")
+            except Exception as e:
+                print(f"Error creating admin user: {e}")
+                # Don't fail the entire initialization for this
+        else:
+            print("Admin user already exists.")
+    except Exception as e:
+        print(f"Error checking for admin user: {e}")
+        # Don't fail the entire initialization for this
     
     # Insert default system settings
     default_settings = [
