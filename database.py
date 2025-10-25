@@ -10,8 +10,15 @@ from zoneinfo import ZoneInfo
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Database setup
-DB_PATH = 'anemia_classification.db'
+# Database setup - use persistent volume if available
+import os
+
+# Use persistent volume path if available, fallback to local
+DB_PATH = os.environ.get('DATABASE_PATH', 'anemia_classification.db')
+
+# Ensure the directory exists for persistent volume
+if DB_PATH != 'anemia_classification.db':
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 def convert_to_philippines_time(timestamp_str):
     """Convert timestamp to Philippines timezone (UTC+8)"""
