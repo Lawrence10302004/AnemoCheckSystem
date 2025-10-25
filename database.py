@@ -84,26 +84,38 @@ def execute_sql(cursor, query, params=None):
 
 def init_db():
     """Initialize the database with necessary tables."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        print("Getting database connection...")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        print("Database connection established")
+    except Exception as e:
+        print(f"Failed to get database connection: {e}")
+        raise e
     
     # Create users table
-    cursor.execute(f'''
-    CREATE TABLE IF NOT EXISTS users (
-        id {get_id_type()},
-        username {get_text_type()} UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        email {get_text_type()} UNIQUE NOT NULL,
-        first_name {get_text_type()},
-        last_name {get_text_type()},
-        gender {get_text_type()},
-        date_of_birth {get_text_type()},
-        medical_id {get_text_type()} UNIQUE,
-        is_admin {get_integer_type()} DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP
-    )
-    ''')
+    try:
+        print("Creating users table...")
+        cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS users (
+            id {get_id_type()},
+            username {get_text_type()} UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            email {get_text_type()} UNIQUE NOT NULL,
+            first_name {get_text_type()},
+            last_name {get_text_type()},
+            gender {get_text_type()},
+            date_of_birth {get_text_type()},
+            medical_id {get_text_type()} UNIQUE,
+            is_admin {get_integer_type()} DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
+        )
+        ''')
+        print("Users table created successfully")
+    except Exception as e:
+        print(f"Error creating users table: {e}")
+        raise e
     
     # Create classification_history table
     cursor.execute(f'''
@@ -1678,12 +1690,14 @@ def update_user_password_by_email(email, password_hash):
 if USE_POSTGRES:
     # For PostgreSQL, always run init_db to ensure tables exist
     try:
+        print("Initializing PostgreSQL database...")
         init_db()
         print("PostgreSQL database initialized successfully")
     except Exception as e:
-        print(f"Error initializing PostgreSQL database: {e}")
-        # Try to continue anyway - some tables might exist
-        pass
+        print(f"CRITICAL ERROR initializing PostgreSQL database: {e}")
+        print("This will cause the application to fail!")
+        # Don't continue - this is critical
+        raise e
 else:
     # For SQLite, check if database file exists
     if not os.path.exists(DB_PATH):

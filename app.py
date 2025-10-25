@@ -2896,7 +2896,7 @@ def get_unread_count():
 
 # WebSocket events
 @socketio.on('connect')
-def handle_connect():
+def handle_connect(auth=None):
     """Handle client connection to WebSocket."""
     if current_user.is_authenticated:
         # Join a room specific to this user
