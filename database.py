@@ -1281,19 +1281,33 @@ def migrate_database():
         """)
     
     if not cursor.fetchone():
-        # Create imported_files table
-        cursor.execute('''
-            CREATE TABLE imported_files (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                filename TEXT NOT NULL,
-                original_filename TEXT NOT NULL,
-                total_records INTEGER NOT NULL,
-                imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                is_applied INTEGER DEFAULT 1,
-                imported_by INTEGER,
-                FOREIGN KEY (imported_by) REFERENCES users(id)
-            )
-        ''')
+        # Create imported_files table with proper PostgreSQL syntax
+        if USE_POSTGRES:
+            cursor.execute('''
+                CREATE TABLE imported_files (
+                    id SERIAL PRIMARY KEY,
+                    filename VARCHAR(255) NOT NULL,
+                    original_filename VARCHAR(255) NOT NULL,
+                    total_records INTEGER NOT NULL,
+                    imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_applied INTEGER DEFAULT 1,
+                    imported_by INTEGER,
+                    FOREIGN KEY (imported_by) REFERENCES users(id)
+                )
+            ''')
+        else:
+            cursor.execute('''
+                CREATE TABLE imported_files (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    filename TEXT NOT NULL,
+                    original_filename TEXT NOT NULL,
+                    total_records INTEGER NOT NULL,
+                    imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_applied INTEGER DEFAULT 1,
+                    imported_by INTEGER,
+                    FOREIGN KEY (imported_by) REFERENCES users(id)
+                )
+            ''')
         
         # Add file_id column to classification_import_data if it doesn't exist
         try:
@@ -1318,24 +1332,43 @@ def migrate_database():
         """)
     
     if not cursor.fetchone():
-        # Create otp_verification table
-        cursor.execute('''
-            CREATE TABLE otp_verification (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL UNIQUE,
-                otp_code TEXT NOT NULL,
-                username TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                first_name TEXT NOT NULL,
-                last_name TEXT NOT NULL,
-                gender TEXT NOT NULL,
-                date_of_birth DATE NOT NULL,
-                medical_id TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                expires_at TIMESTAMP NOT NULL,
-                is_verified INTEGER DEFAULT 0
-            )
-        ''')
+        # Create otp_verification table with proper PostgreSQL syntax
+        if USE_POSTGRES:
+            cursor.execute('''
+                CREATE TABLE otp_verification (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL UNIQUE,
+                    otp_code VARCHAR(10) NOT NULL,
+                    username VARCHAR(255) NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    first_name VARCHAR(255) NOT NULL,
+                    last_name VARCHAR(255) NOT NULL,
+                    gender VARCHAR(50) NOT NULL,
+                    date_of_birth DATE NOT NULL,
+                    medical_id VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL,
+                    is_verified INTEGER DEFAULT 0
+                )
+            ''')
+        else:
+            cursor.execute('''
+                CREATE TABLE otp_verification (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT NOT NULL UNIQUE,
+                    otp_code TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    gender TEXT NOT NULL,
+                    date_of_birth DATE NOT NULL,
+                    medical_id TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL,
+                    is_verified INTEGER DEFAULT 0
+                )
+            ''')
         
         conn.commit()
         print("Database migrated successfully - added otp_verification table")
@@ -1353,17 +1386,29 @@ def migrate_database():
         """)
     
     if not cursor.fetchone():
-        # Create password_reset_otp table
-        cursor.execute('''
-            CREATE TABLE password_reset_otp (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                otp_code TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                expires_at TIMESTAMP NOT NULL,
-                is_verified INTEGER DEFAULT 0
-            )
-        ''')
+        # Create password_reset_otp table with proper PostgreSQL syntax
+        if USE_POSTGRES:
+            cursor.execute('''
+                CREATE TABLE password_reset_otp (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    otp_code VARCHAR(10) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL,
+                    is_verified INTEGER DEFAULT 0
+                )
+            ''')
+        else:
+            cursor.execute('''
+                CREATE TABLE password_reset_otp (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT NOT NULL,
+                    otp_code TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL,
+                    is_verified INTEGER DEFAULT 0
+                )
+            ''')
         
         conn.commit()
         print("Database migrated successfully - added password_reset_otp table")
@@ -1611,14 +1656,22 @@ if USE_POSTGRES:
         init_db()
     except Exception as e:
         print(f"Error initializing PostgreSQL database: {e}")
-        # Try migration as fallback
-        migrate_database()
+        # Don't run migration as fallback for PostgreSQL - init_db should handle everything
+        pass
 else:
     # For SQLite, check if database file exists
     if not os.path.exists(DB_PATH):
         init_db()
     else:
         # Run migration for existing databases
-        migrate_database()
+        try:
+            migrate_database()
+        except Exception as e:
+            print(f"Error during migration: {e}")
+            # If migration fails, try init_db
+            try:
+                init_db()
+            except Exception as e2:
+                print(f"Error initializing database: {e2}")
 
 
