@@ -174,37 +174,36 @@
                             </div>
                         </div>
 
-                        <!-- Email Settings -->
+                        <!-- Email Settings (Brevo API) -->
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
-                                <h6 class="m-0 font-weight-bold text-primary">Email Settings</h6>
+                                <h6 class="m-0 font-weight-bold text-primary">Email Settings (Brevo API)</h6>
                             </div>
                             <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Brevo API Configuration:</strong> Configure your Brevo (formerly Sendinblue) API settings for sending emails. 
+                                    Get your API key from your <a href="https://app.brevo.com/settings/keys/api" target="_blank">Brevo dashboard</a>.
+                                </div>
+                                
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="mb-3">
-                                            {{ form.smtp_server.label(class="form-label") }}
-                                            {{ form.smtp_server(class="form-control") }}
-                                            {% if form.smtp_server.errors %}
+                                            {{ form.brevo_api_key.label(class="form-label") }}
+                                            <div class="input-group">
+                                                {{ form.brevo_api_key(class="form-control", type="password", id="brevo_api_key") }}
+                                                <span class="input-group-text" id="api-key-status" style="display: none;">
+                                                    <i class="fas fa-check-circle text-success" title="API key is saved"></i>
+                                                </span>
+                                            </div>
+                                            {% if form.brevo_api_key.errors %}
                                                 <div class="text-danger">
-                                                    {% for error in form.smtp_server.errors %}
+                                                    {% for error in form.brevo_api_key.errors %}
                                                         <small>{{ error }}</small>
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            {{ form.smtp_port.label(class="form-label") }}
-                                            {{ form.smtp_port(class="form-control") }}
-                                            {% if form.smtp_port.errors %}
-                                                <div class="text-danger">
-                                                    {% for error in form.smtp_port.errors %}
-                                                        <small>{{ error }}</small>
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
+                                            <small class="text-muted" id="api-key-help">Leave empty to keep current API key</small>
                                         </div>
                                     </div>
                                 </div>
@@ -212,11 +211,11 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            {{ form.smtp_username.label(class="form-label") }}
-                                            {{ form.smtp_username(class="form-control") }}
-                                            {% if form.smtp_username.errors %}
+                                            {{ form.brevo_sender_email.label(class="form-label") }}
+                                            {{ form.brevo_sender_email(class="form-control") }}
+                                            {% if form.brevo_sender_email.errors %}
                                                 <div class="text-danger">
-                                                    {% for error in form.smtp_username.errors %}
+                                                    {% for error in form.brevo_sender_email.errors %}
                                                         <small>{{ error }}</small>
                                                     {% endfor %}
                                                 </div>
@@ -225,21 +224,15 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            {{ form.smtp_password.label(class="form-label") }}
-                                            <div class="input-group">
-                                                {{ form.smtp_password(class="form-control", type="password", id="smtp_password") }}
-                                                <span class="input-group-text" id="password-status" style="display: none;">
-                                                    <i class="fas fa-check-circle text-success" title="Password is saved"></i>
-                                                </span>
-                                            </div>
-                                            {% if form.smtp_password.errors %}
+                                            {{ form.brevo_sender_name.label(class="form-label") }}
+                                            {{ form.brevo_sender_name(class="form-control") }}
+                                            {% if form.brevo_sender_name.errors %}
                                                 <div class="text-danger">
-                                                    {% for error in form.smtp_password.errors %}
+                                                    {% for error in form.brevo_sender_name.errors %}
                                                         <small>{{ error }}</small>
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
-                                            <small class="text-muted" id="password-help">Leave empty to keep current password</small>
                                         </div>
                                     </div>
                                 </div>
@@ -431,60 +424,60 @@ function restartSystem() {
     }
 }
 
-// Check if SMTP password is saved and update UI accordingly
+// Check if Brevo API key is saved and update UI accordingly
 document.addEventListener('DOMContentLoaded', function() {
-    const passwordField = document.getElementById('smtp_password');
-    const passwordStatus = document.getElementById('password-status');
-    const passwordHelp = document.getElementById('password-help');
+    const apiKeyField = document.getElementById('brevo_api_key');
+    const apiKeyStatus = document.getElementById('api-key-status');
+    const apiKeyHelp = document.getElementById('api-key-help');
     
-    if (passwordField && passwordField.placeholder.includes('Password is saved')) {
-        // Show that password is saved
-        if (passwordStatus) {
-            passwordStatus.style.display = 'block';
+    if (apiKeyField && apiKeyField.placeholder.includes('API key is saved')) {
+        // Show that API key is saved
+        if (apiKeyStatus) {
+            apiKeyStatus.style.display = 'block';
         }
-        if (passwordHelp) {
-            passwordHelp.textContent = 'Password is saved - enter new password to change';
-            passwordHelp.className = 'text-success';
+        if (apiKeyHelp) {
+            apiKeyHelp.textContent = 'API key is saved - enter new key to change';
+            apiKeyHelp.className = 'text-success';
         }
     } else {
-        // Show that no password is saved
-        if (passwordStatus) {
-            passwordStatus.style.display = 'none';
+        // Show that no API key is saved
+        if (apiKeyStatus) {
+            apiKeyStatus.style.display = 'none';
         }
-        if (passwordHelp) {
-            passwordHelp.textContent = 'Enter SMTP password';
-            passwordHelp.className = 'text-muted';
+        if (apiKeyHelp) {
+            apiKeyHelp.textContent = 'Enter Brevo API key';
+            apiKeyHelp.className = 'text-muted';
         }
     }
     
-    // Update status when user types in password field
-    if (passwordField) {
-        passwordField.addEventListener('input', function() {
+    // Update status when user types in API key field
+    if (apiKeyField) {
+        apiKeyField.addEventListener('input', function() {
             if (this.value.length > 0) {
-                if (passwordStatus) {
-                    passwordStatus.style.display = 'block';
+                if (apiKeyStatus) {
+                    apiKeyStatus.style.display = 'block';
                 }
-                if (passwordHelp) {
-                    passwordHelp.textContent = 'New password entered';
-                    passwordHelp.className = 'text-info';
+                if (apiKeyHelp) {
+                    apiKeyHelp.textContent = 'New API key entered';
+                    apiKeyHelp.className = 'text-info';
                 }
             } else {
-                // Check if password was originally saved
-                if (this.placeholder.includes('Password is saved')) {
-                    if (passwordStatus) {
-                        passwordStatus.style.display = 'block';
+                // Check if API key was originally saved
+                if (this.placeholder.includes('API key is saved')) {
+                    if (apiKeyStatus) {
+                        apiKeyStatus.style.display = 'block';
                     }
-                    if (passwordHelp) {
-                        passwordHelp.textContent = 'Password is saved - enter new password to change';
-                        passwordHelp.className = 'text-success';
+                    if (apiKeyHelp) {
+                        apiKeyHelp.textContent = 'API key is saved - enter new key to change';
+                        apiKeyHelp.className = 'text-success';
                     }
                 } else {
-                    if (passwordStatus) {
-                        passwordStatus.style.display = 'none';
+                    if (apiKeyStatus) {
+                        apiKeyStatus.style.display = 'none';
                     }
-                    if (passwordHelp) {
-                        passwordHelp.textContent = 'Enter SMTP password';
-                        passwordHelp.className = 'text-muted';
+                    if (apiKeyHelp) {
+                        apiKeyHelp.textContent = 'Enter Brevo API key';
+                        apiKeyHelp.className = 'text-muted';
                     }
                 }
             }

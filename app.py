@@ -10,12 +10,13 @@ Date: April 28, 2025
 import os
 import json
 import logging
-import smtplib
+# SMTP imports removed - now using Brevo API
+# import smtplib
 import random
 import string
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+# from email.mime.text import MIMEText
+# from email.mime.multipart import MIMEMultipart
 
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, session
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -37,6 +38,7 @@ import base64
 
 import database as db
 import simple_chat
+from email_service import send_result_email_brevo, send_otp_email_brevo_brevo
 
 from anemia_model import AnemiaCBCModel
 import joblib
@@ -184,11 +186,10 @@ class SystemSettingsForm(FlaskForm):
     model_version = StringField('Model Version', validators=[DataRequired(), Length(max=50)])
     enable_auto_retrain = BooleanField('Enable Auto Retrain')
     
-    # Email Settings
-    smtp_server = StringField('SMTP Server', validators=[Length(max=100)])
-    smtp_port = IntegerField('SMTP Port', validators=[NumberRange(min=1, max=65535)])
-    smtp_username = StringField('SMTP Username', validators=[Length(max=100)])
-    smtp_password = PasswordField('SMTP Password', validators=[Length(max=100)])
+    # Email Settings (Brevo API)
+    brevo_api_key = PasswordField('Brevo API Key', validators=[Length(max=200)])
+    brevo_sender_email = StringField('Sender Email', validators=[Email(), Length(max=100)])
+    brevo_sender_name = StringField('Sender Name', validators=[Length(max=100)])
     enable_email_notifications = BooleanField('Enable Email Notifications')
     
     # Security Settings
@@ -299,7 +300,7 @@ def register():
         
         if success:
             # Send OTP email
-            email_sent = send_otp_email(form.email.data, otp_code, form.username.data)
+            email_sent = send_otp_email_brevo(form.email.data, otp_code, form.username.data)
             if email_sent:
                 # Store email and username in session for verification step
                 session['pending_email'] = form.email.data
@@ -421,7 +422,7 @@ def resend_verification_otp():
         # Send OTP email
         # Get username from session or use email as fallback
         username = session.get('pending_username', email.split('@')[0])
-        email_sent = send_otp_email(email, otp_code, username)
+        email_sent = send_otp_email_brevo(email, otp_code, username)
         
         if not email_sent:
             return jsonify({'success': False, 'error': 'Failed to send verification email. Please try again.'})
@@ -934,8 +935,8 @@ def xgbclasify():
                 'notes': notes
             }
             
-            # Send email
-            success, message = send_result_email_helper(
+            # Send email using Brevo API
+            success, message = send_result_email_brevo(
                 record_id, 
                 user_data['email'], 
                 f"{user_data['first_name']} {user_data['last_name']}".strip() or user_data['username'],
@@ -1509,16 +1510,17 @@ def admin_settings():
         form.model_confidence_threshold.data = float(db.get_system_setting('model_confidence_threshold') or 0.8)
         form.model_version.data = db.get_system_setting('model_version') or '1.0.0'
         form.enable_auto_retrain.data = db.get_system_setting('enable_auto_retrain') == 'true'
-        form.smtp_server.data = db.get_system_setting('smtp_server') or ''
-        form.smtp_port.data = int(db.get_system_setting('smtp_port') or 587)
-        form.smtp_username.data = db.get_system_setting('smtp_username') or ''
+        # Brevo API settings
+        form.brevo_api_key.data = db.get_system_setting('brevo_api_key') or ''
+        form.brevo_sender_email.data = db.get_system_setting('brevo_sender_email') or ''
+        form.brevo_sender_name.data = db.get_system_setting('brevo_sender_name') or 'AnemoCheck'
         
-        # Check if password exists and set appropriate placeholder
-        existing_password = db.get_system_setting('smtp_password')
-        if existing_password:
-            form.smtp_password.render_kw = {'placeholder': 'Password is saved - enter new password to change'}
+        # Check if API key exists and set appropriate placeholder
+        existing_api_key = db.get_system_setting('brevo_api_key')
+        if existing_api_key:
+            form.brevo_api_key.render_kw = {'placeholder': 'API key is saved - enter new key to change'}
         else:
-            form.smtp_password.render_kw = {'placeholder': 'Enter SMTP password'}
+            form.brevo_api_key.render_kw = {'placeholder': 'Enter Brevo API key'}
         
         form.enable_email_notifications.data = db.get_system_setting('enable_email_notifications') == 'true'
         form.password_min_length.data = int(db.get_system_setting('password_min_length') or 8)
@@ -1527,14 +1529,9 @@ def admin_settings():
     
     if form.validate_on_submit():
         logger.info("Admin settings form submitted")
-        logger.info(f"SMTP Server: {form.smtp_server.data}")
-        logger.info(f"SMTP Port: {form.smtp_port.data}")
-        logger.info(f"SMTP Username: {form.smtp_username.data}")
-        logger.info(f"SMTP Password provided: {bool(form.smtp_password.data)}")
-        logger.info(f"SMTP Password length: {len(form.smtp_password.data) if form.smtp_password.data else 0}")
-        logger.info(f"SMTP Password value: '{form.smtp_password.data}'")
-        logger.info(f"Form data keys: {list(request.form.keys())}")
-        logger.info(f"Raw form data: {dict(request.form)}")
+        logger.info(f"Brevo API Key provided: {bool(form.brevo_api_key.data)}")
+        logger.info(f"Brevo Sender Email: {form.brevo_sender_email.data}")
+        logger.info(f"Brevo Sender Name: {form.brevo_sender_name.data}")
         logger.info(f"Enable Email Notifications: {form.enable_email_notifications.data}")
         
         # Update settings
@@ -1546,32 +1543,26 @@ def admin_settings():
         db.update_system_setting('model_version', form.model_version.data, current_user.id)
         db.update_system_setting('enable_auto_retrain', 'true' if form.enable_auto_retrain.data else 'false', current_user.id)
         
-        # Email settings
-        db.update_system_setting('smtp_server', form.smtp_server.data, current_user.id)
-        db.update_system_setting('smtp_port', str(form.smtp_port.data), current_user.id)
-        db.update_system_setting('smtp_username', form.smtp_username.data, current_user.id)
-        if form.smtp_password.data:
-            logger.info(f"Attempting to save password: '{form.smtp_password.data}'")
-            logger.info(f"Password length: {len(form.smtp_password.data)}")
+        # Brevo API settings
+        db.update_system_setting('brevo_sender_email', form.brevo_sender_email.data, current_user.id)
+        db.update_system_setting('brevo_sender_name', form.brevo_sender_name.data, current_user.id)
+        if form.brevo_api_key.data:
+            logger.info(f"Attempting to save Brevo API key")
+            logger.info(f"API key length: {len(form.brevo_api_key.data)}")
             logger.info(f"User ID: {current_user.id}")
             
-            # Test direct database operation
             try:
-                result = db.update_system_setting('smtp_password', form.smtp_password.data, current_user.id)
-                logger.info(f"Password save result: {result}")
+                result = db.update_system_setting('brevo_api_key', form.brevo_api_key.data, current_user.id)
+                logger.info(f"API key save result: {result}")
                 
                 if result:
-                    # Verify it was saved
-                    saved_password = db.get_system_setting('smtp_password')
-                    logger.info(f"Password verification - saved: {bool(saved_password)}")
-                    logger.info(f"Saved password length: {len(saved_password) if saved_password else 0}")
-                    logger.info("SMTP Password updated successfully")
+                    logger.info("Brevo API Key updated successfully")
                 else:
-                    logger.error("Failed to save SMTP password - database returned False")
+                    logger.error("Failed to save Brevo API key - database returned False")
             except Exception as e:
-                logger.error(f"Exception during password save: {str(e)}")
+                logger.error(f"Exception during API key save: {str(e)}")
         else:
-            logger.info("SMTP Password not provided - keeping existing password")
+            logger.info("Brevo API Key not provided - keeping existing key")
         db.update_system_setting('enable_email_notifications', 'true' if form.enable_email_notifications.data else 'false', current_user.id)
         
         db.update_system_setting('password_min_length', str(form.password_min_length.data), current_user.id)
@@ -1579,30 +1570,14 @@ def admin_settings():
         db.update_system_setting('enable_two_factor', 'true' if form.enable_two_factor.data else 'false', current_user.id)
         
         # Verify settings were saved
-        saved_smtp_server = db.get_system_setting('smtp_server')
-        saved_smtp_username = db.get_system_setting('smtp_username')
-        saved_smtp_password = db.get_system_setting('smtp_password')
+        saved_brevo_sender_email = db.get_system_setting('brevo_sender_email')
+        saved_brevo_sender_name = db.get_system_setting('brevo_sender_name')
+        saved_brevo_api_key = db.get_system_setting('brevo_api_key')
         saved_enable_notifications = db.get_system_setting('enable_email_notifications')
-        logger.info(f"Saved SMTP Server: {saved_smtp_server}")
-        logger.info(f"Saved SMTP Username: {saved_smtp_username}")
-        logger.info(f"Saved SMTP Password exists: {bool(saved_smtp_password)}")
-        logger.info(f"Saved SMTP Password length: {len(saved_smtp_password) if saved_smtp_password else 0}")
+        logger.info(f"Saved Brevo Sender Email: {saved_brevo_sender_email}")
+        logger.info(f"Saved Brevo Sender Name: {saved_brevo_sender_name}")
+        logger.info(f"Saved Brevo API Key exists: {bool(saved_brevo_api_key)}")
         logger.info(f"Saved Enable Notifications: {saved_enable_notifications}")
-        
-        # Additional database check
-        try:
-            conn = db.get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT setting_name, setting_value FROM system_settings WHERE setting_name = 'smtp_password'")
-            result = cursor.fetchone()
-            if result:
-                logger.info(f"Direct DB query - smtp_password: {result[1]}")
-                logger.info(f"Direct DB query - password length: {len(result[1]) if result[1] else 0}")
-            else:
-                logger.info("Direct DB query - no smtp_password record found")
-            conn.close()
-        except Exception as e:
-            logger.error(f"Direct DB query failed: {str(e)}")
         
         flash('Settings updated successfully!')
         return redirect(url_for('admin_settings'))
@@ -1610,165 +1585,7 @@ def admin_settings():
     return render_template('admin/settings.html', form=form)
 
 
-# Email sending functionality
-def send_result_email_helper(record_id, user_email, user_name, record_data):
-    """Send anemia test result email to user."""
-    try:
-        # Get email settings from database
-        smtp_server = db.get_system_setting('smtp_server')
-        smtp_port = int(db.get_system_setting('smtp_port') or 587)
-        smtp_username = db.get_system_setting('smtp_username')
-        smtp_password = db.get_system_setting('smtp_password')
-        enable_notifications = db.get_system_setting('enable_email_notifications') == 'true'
-        
-        if not enable_notifications or not smtp_server or not smtp_username:
-            return False, "Email notifications are not configured or enabled"
-        
-        # Create email content
-        subject = f"AnemoCheck - Your Anemia Test Result ({record_data['predicted_class']})"
-        
-        # Create HTML email content
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Anemia Test Result</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #c62828; color: white; padding: 20px; text-align: center; }}
-                .content {{ padding: 20px; background-color: #f9f9f9; }}
-                .result-box {{ background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
-                .classification {{ font-size: 24px; font-weight: bold; text-align: center; padding: 15px; border-radius: 5px; }}
-                .normal {{ background-color: #d4edda; color: #155724; }}
-                .mild {{ background-color: #fff3cd; color: #856404; }}
-                .moderate {{ background-color: #f8d7da; color: #721c24; }}
-                .severe {{ background-color: #f5c6cb; color: #721c24; }}
-                .values-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-                .values-table th, .values-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                .values-table th {{ background-color: #f2f2f2; }}
-                .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>AnemoCheck - Anemia Test Result</h1>
-                </div>
-                <div class="content">
-                    <h2>Hello {user_name},</h2>
-                    <p>Your anemia classification test has been completed. Here are your results:</p>
-                    
-                    <div class="result-box">
-                        <h3>Classification Result</h3>
-                        <div class="classification {'normal' if record_data['predicted_class'] == 'Normal' else 'mild' if record_data['predicted_class'] == 'Mild' else 'moderate' if record_data['predicted_class'] == 'Moderate' else 'severe' if record_data['predicted_class'] == 'Severe' else ''}">
-                            {record_data['predicted_class']}
-                        </div>
-                        <p style="text-align: center; margin-top: 10px;">
-                            <strong>Confidence: {record_data['confidence']:.1%}</strong>
-                        </p>
-                    </div>
-                    
-                    <div class="result-box">
-                        <h3>Complete Blood Count (CBC) Values</h3>
-                        <table class="values-table">
-                            <tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>
-                            <tr><td>White Blood Cell Count (WBC)</td><td>{record_data['wbc']:.2f}</td><td>10³/µL</td></tr>
-                            <tr><td>Red Blood Cell Count (RBC)</td><td>{record_data['rbc']:.2f}</td><td>million/µL</td></tr>
-                            <tr><td>Hemoglobin (HGB)</td><td>{record_data['hgb']:.2f}</td><td>g/dL</td></tr>
-                            <tr><td>Hematocrit (HCT)</td><td>{record_data['hct']:.2f}</td><td>%</td></tr>
-                            <tr><td>Mean Corpuscular Volume (MCV)</td><td>{record_data['mcv']:.2f}</td><td>fL</td></tr>
-                            <tr><td>Mean Corpuscular Hemoglobin (MCH)</td><td>{record_data['mch']:.2f}</td><td>pg</td></tr>
-                            <tr><td>Mean Corpuscular Hemoglobin Concentration (MCHC)</td><td>{record_data['mchc']:.2f}</td><td>g/dL</td></tr>
-                            <tr><td>Platelet Count (PLT)</td><td>{record_data['plt']:.2f}</td><td>10³/µL</td></tr>
-                        </table>
-                    </div>
-                    
-                    {f'<div class="result-box"><h3>Notes</h3><p>{record_data.get("notes", "")}</p></div>' if record_data.get("notes") else ''}
-                    
-                    <div class="result-box">
-                        <h3>Important Information</h3>
-                        <p><strong>Please note:</strong> This is an AI-powered screening tool and should not replace professional medical advice. Always consult with a healthcare provider for proper diagnosis and treatment.</p>
-                        <p><strong>Test Date:</strong> {record_data['created_at']}</p>
-                    </div>
-                </div>
-                <div class="footer">
-                    <p>This email was sent from AnemoCheck - Anemia Detection System</p>
-                    <p>For support, please contact your healthcare provider</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Create plain text version
-        text_content = f"""
-        AnemoCheck - Anemia Test Result
-        
-        Hello {user_name},
-        
-        Your anemia classification test has been completed. Here are your results:
-        
-        Classification Result: {record_data['predicted_class']}
-        Confidence: {record_data['confidence']:.1%}
-        
-        Complete Blood Count (CBC) Values:
-        - White Blood Cell Count (WBC): {record_data['wbc']:.2f} 10³/µL
-        - Red Blood Cell Count (RBC): {record_data['rbc']:.2f} million/µL
-        - Hemoglobin (HGB): {record_data['hgb']:.2f} g/dL
-        - Hematocrit (HCT): {record_data['hct']:.2f} %
-        - Mean Corpuscular Volume (MCV): {record_data['mcv']:.2f} fL
-        - Mean Corpuscular Hemoglobin (MCH): {record_data['mch']:.2f} pg
-        - Mean Corpuscular Hemoglobin Concentration (MCHC): {record_data['mchc']:.2f} g/dL
-        - Platelet Count (PLT): {record_data['plt']:.2f} 10³/µL
-        
-        {f'Notes: {record_data.get("notes", "")}' if record_data.get("notes") else ''}
-        
-        Important Information:
-        Please note: This is an AI-powered screening tool and should not replace professional medical advice. Always consult with a healthcare provider for proper diagnosis and treatment.
-        
-        Test Date: {record_data['created_at']}
-        
-        This email was sent from AnemoCheck - Anemia Detection System
-        For support, please contact your healthcare provider
-        """
-        
-        # Create message
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = smtp_username
-        msg['To'] = user_email
-        
-        # Add text and HTML parts
-        text_part = MIMEText(text_content, 'plain')
-        html_part = MIMEText(html_content, 'html')
-        
-        msg.attach(text_part)
-        msg.attach(html_part)
-        
-        # Send email
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            # Try different authentication methods for Outlook
-            try:
-                server.login(smtp_username, smtp_password)
-            except smtplib.SMTPAuthenticationError as e:
-                if "basic authentication is disabled" in str(e).lower():
-                    # For Outlook, try with different approach
-                    server.ehlo()
-                    server.starttls()
-                    server.ehlo()
-                    server.login(smtp_username, smtp_password)
-                else:
-                    raise e
-            server.send_message(msg)
-        
-        return True, "Email sent successfully"
-        
-    except Exception as e:
-        logger.error(f"Error sending email: {str(e)}")
-        return False, f"Error sending email: {str(e)}"
+# Email sending functionality - now handled by Brevo API service
 
 
 # Email routes
@@ -1801,7 +1618,7 @@ def send_result_email(record_id):
         logger.info(f"Found user: {user_data['email']}")
         
         # Send email
-        success, message = send_result_email_helper(record_id, user_data['email'], 
+        success, message = send_result_email_brevo(record_id, user_data['email'], 
                                            f"{user_data['first_name']} {user_data['last_name']}".strip() or user_data['username'],
                                            record_data)
         
@@ -1842,7 +1659,7 @@ def admin_send_result_email(record_id):
         logger.info(f"Found user: {user_data['email']}")
         
         # Send email
-        success, message = send_result_email_helper(record_id, user_data['email'], 
+        success, message = send_result_email_brevo(record_id, user_data['email'], 
                                            f"{user_data['first_name']} {user_data['last_name']}".strip() or user_data['username'],
                                            record_data)
         
@@ -3124,159 +2941,7 @@ def generate_otp():
     """Generate a 6-digit OTP code."""
     return ''.join(random.choices(string.digits, k=6))
 
-def send_otp_email(email, otp_code, username):
-    """Send OTP code to user's email using existing SMTP configuration."""
-    try:
-        # Get email settings from database (same as result email sending)
-        smtp_server = db.get_system_setting('smtp_server')
-        smtp_port = int(db.get_system_setting('smtp_port') or 587)
-        smtp_username = db.get_system_setting('smtp_username')
-        smtp_password = db.get_system_setting('smtp_password')
-        enable_notifications = db.get_system_setting('enable_email_notifications') == 'true'
-        
-        if not enable_notifications or not smtp_server or not smtp_username:
-            logger.warning("Email notifications not configured. Using development mode.")
-            # Development fallback
-            print(f"\n{'='*60}")
-            print(f"DEVELOPMENT MODE - OTP EMAIL")
-            print(f"{'='*60}")
-            print(f"To: {email}")
-            print(f"Subject: AnemoCheck - Email Verification Code")
-            print(f"")
-            print(f"Hello {username},")
-            print(f"")
-            print(f"Your verification code is: {otp_code}")
-            print(f"")
-            print(f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.")
-            print(f"{'='*60}\n")
-            return True
-        
-        # Create email content
-        subject = "AnemoCheck - Email Verification Code"
-        
-        # Create HTML email content
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Email Verification</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #007bff; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
-                .content {{ padding: 20px; background-color: #f9f9f9; border-radius: 0 0 8px 8px; }}
-                .otp-box {{ background-color: white; padding: 30px; margin: 20px 0; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
-                .otp-code {{ font-size: 36px; font-weight: bold; color: #007bff; letter-spacing: 8px; margin: 20px 0; }}
-                .warning {{ background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }}
-                .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>AnemoCheck Email Verification</h1>
-                </div>
-                <div class="content">
-                    <h2>Hello {username},</h2>
-                    <p>Thank you for registering with AnemoCheck! To complete your registration, please use the verification code below:</p>
-                    
-                    <div class="otp-box">
-                        <h3>Your Verification Code</h3>
-                        <div class="otp-code">{otp_code}</div>
-                        <p>Enter this code in the verification page to complete your registration.</p>
-                    </div>
-                    
-                    <div class="warning">
-                        <strong>Important:</strong>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>This code will expire in {OTP_EXPIRY_MINUTES} minutes</li>
-                            <li>Do not share this code with anyone</li>
-                            <li>If you didn't request this code, please ignore this email</li>
-                        </ul>
-                    </div>
-                    
-                    <p>If you have any questions, please contact our support team.</p>
-                </div>
-                <div class="footer">
-                    <p>This is an automated message from AnemoCheck. Please do not reply to this email.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Create plain text version
-        text_content = f"""
-        AnemoCheck Email Verification
-        
-        Hello {username},
-        
-        Thank you for registering with AnemoCheck! To complete your registration, please use the verification code below:
-        
-        Your Verification Code: {otp_code}
-        
-        Enter this code in the verification page to complete your registration.
-        
-        Important:
-        - This code will expire in {OTP_EXPIRY_MINUTES} minutes
-        - Do not share this code with anyone
-        - If you didn't request this code, please ignore this email
-        
-        If you have any questions, please contact our support team.
-        
-        This is an automated message from AnemoCheck. Please do not reply to this email.
-        """
-        
-        # Create message
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = smtp_username
-        msg['To'] = email
-        
-        # Add text and HTML parts
-        text_part = MIMEText(text_content, 'plain')
-        html_part = MIMEText(html_content, 'html')
-        
-        msg.attach(text_part)
-        msg.attach(html_part)
-        
-        # Send email using the same method as result emails
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            # Try different authentication methods for Outlook
-            try:
-                server.login(smtp_username, smtp_password)
-            except smtplib.SMTPAuthenticationError as e:
-                if "basic authentication is disabled" in str(e).lower():
-                    # For Outlook, try with different approach
-                    server.ehlo()
-                    server.starttls()
-                    server.ehlo()
-                    server.login(smtp_username, smtp_password)
-                else:
-                    raise e
-            server.send_message(msg)
-        
-        logger.info(f"OTP email sent successfully to {email}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error sending OTP email: {str(e)}")
-        # Fallback to development mode
-        print(f"\n{'='*60}")
-        print(f"EMAIL SENDING FAILED - DEVELOPMENT FALLBACK")
-        print(f"{'='*60}")
-        print(f"To: {email}")
-        print(f"Subject: AnemoCheck - Email Verification Code")
-        print(f"")
-        print(f"Hello {username},")
-        print(f"")
-        print(f"Your verification code is: {otp_code}")
-        print(f"")
-        print(f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.")
-        print(f"{'='*60}\n")
-        return True  # Return True for development purposes
+# OTP email function moved to email_service.py (Brevo API)
 
 # Initialize the database and model when the app starts
 with app.app_context():

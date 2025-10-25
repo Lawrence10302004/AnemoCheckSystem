@@ -10,3 +10,4 @@ matplotlib
 joblib
 gunicorn
 email_validator
+sib-api-v3-sdk
