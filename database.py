@@ -948,17 +948,26 @@ def get_recent_classifications(page=1, per_page=5):
     offset = (page - 1) * per_page
     
     # Get total count
-    cursor.execute("SELECT COUNT(*) as total FROM classification_history")
+    execute_sql(cursor, "SELECT COUNT(*) as total FROM classification_history")
     total = cursor.fetchone()['total']
     
     # Get paginated results
-    cursor.execute("""
-        SELECT ch.*, u.username
-        FROM classification_history ch
-        LEFT JOIN users u ON ch.user_id = u.id
-        ORDER BY ch.created_at DESC
-        LIMIT ? OFFSET ?
-    """, (per_page, offset))
+    if USE_POSTGRES:
+        execute_sql(cursor, """
+            SELECT ch.*, u.username
+            FROM classification_history ch
+            LEFT JOIN users u ON ch.user_id = u.id
+            ORDER BY ch.created_at DESC
+            LIMIT %s OFFSET %s
+        """, (per_page, offset))
+    else:
+        execute_sql(cursor, """
+            SELECT ch.*, u.username
+            FROM classification_history ch
+            LEFT JOIN users u ON ch.user_id = u.id
+            ORDER BY ch.created_at DESC
+            LIMIT ? OFFSET ?
+        """, (per_page, offset))
     
     records = [dict(row) for row in cursor.fetchall()]
     conn.close()
