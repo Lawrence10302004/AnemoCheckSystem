@@ -2970,8 +2970,8 @@ def generate_otp():
 
 # Initialize the database and model when the app starts
 with app.app_context():
-    # Initialize database if it doesn't exist
-    if not os.path.exists(db.DB_PATH):
+    # Initialize database if it doesn't exist (only for SQLite)
+    if not db.USE_POSTGRES and db.DB_PATH and not os.path.exists(db.DB_PATH):
         db.init_db()
     
     # Initialize anemia model with system settings

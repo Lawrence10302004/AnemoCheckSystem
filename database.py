@@ -17,6 +17,7 @@ if USE_POSTGRES:
     import psycopg2
     from psycopg2.extras import RealDictCursor
     print("Using PostgreSQL database (Railway)")
+    DB_PATH = None  # Not used for PostgreSQL
 else:
     import sqlite3
     DB_PATH = os.environ.get('DATABASE_PATH', 'anemia_classification.db')
@@ -1654,9 +1655,10 @@ if USE_POSTGRES:
     # For PostgreSQL, always run init_db to ensure tables exist
     try:
         init_db()
+        print("PostgreSQL database initialized successfully")
     except Exception as e:
         print(f"Error initializing PostgreSQL database: {e}")
-        # Don't run migration as fallback for PostgreSQL - init_db should handle everything
+        # Try to continue anyway - some tables might exist
         pass
 else:
     # For SQLite, check if database file exists
