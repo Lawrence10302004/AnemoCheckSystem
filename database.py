@@ -897,19 +897,33 @@ def get_statistics():
         class_distribution[canonical] = class_distribution.get(canonical, 0) + cnt
     
     # Get new users in the last 7 days
-    cursor.execute("""
-        SELECT COUNT(*) as new_user_count 
-        FROM users 
-        WHERE created_at > datetime('now', '-7 days') AND is_admin = 0
-    """)
+    if USE_POSTGRES:
+        execute_sql(cursor, """
+            SELECT COUNT(*) as new_user_count 
+            FROM users 
+            WHERE created_at > NOW() - INTERVAL '7 days' AND is_admin = 0
+        """)
+    else:
+        execute_sql(cursor, """
+            SELECT COUNT(*) as new_user_count 
+            FROM users 
+            WHERE created_at > datetime('now', '-7 days') AND is_admin = 0
+        """)
     new_user_count = cursor.fetchone()['new_user_count']
     
     # Get active users in the last 7 days
-    cursor.execute("""
-        SELECT COUNT(DISTINCT user_id) as active_user_count 
-        FROM classification_history 
-        WHERE created_at > datetime('now', '-7 days')
-    """)
+    if USE_POSTGRES:
+        execute_sql(cursor, """
+            SELECT COUNT(DISTINCT user_id) as active_user_count 
+            FROM classification_history 
+            WHERE created_at > NOW() - INTERVAL '7 days'
+        """)
+    else:
+        execute_sql(cursor, """
+            SELECT COUNT(DISTINCT user_id) as active_user_count 
+            FROM classification_history 
+            WHERE created_at > datetime('now', '-7 days')
+        """)
     active_user_count = cursor.fetchone()['active_user_count']
     
     conn.close()
