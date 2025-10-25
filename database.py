@@ -166,32 +166,44 @@ def init_db():
     )
     ''')
     
-    # Create classification_import_data table for imported statistics
-    cursor.execute(f'''
-    CREATE TABLE IF NOT EXISTS classification_import_data (
-        id {get_id_type()},
-        age {get_integer_type()} NOT NULL,
-        gender {get_text_type()} NOT NULL,
-        category {get_text_type()} NOT NULL,
-        imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        file_id {get_integer_type()},
-        FOREIGN KEY (file_id) REFERENCES imported_files(id)
-    )
-    ''')
+    # Create imported_files table to track imported files (MUST BE FIRST)
+    try:
+        print("Creating imported_files table...")
+        cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS imported_files (
+            id {get_id_type()},
+            filename {get_text_type()} NOT NULL,
+            original_filename {get_text_type()} NOT NULL,
+            total_records {get_integer_type()} NOT NULL,
+            imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_applied {get_integer_type()} DEFAULT 1,
+            imported_by {get_integer_type()},
+            FOREIGN KEY (imported_by) REFERENCES users(id)
+        )
+        ''')
+        print("imported_files table created successfully")
+    except Exception as e:
+        print(f"Error creating imported_files table: {e}")
+        raise e
     
-    # Create imported_files table to track imported files
-    cursor.execute(f'''
-    CREATE TABLE IF NOT EXISTS imported_files (
-        id {get_id_type()},
-        filename {get_text_type()} NOT NULL,
-        original_filename {get_text_type()} NOT NULL,
-        total_records {get_integer_type()} NOT NULL,
-        imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_applied {get_integer_type()} DEFAULT 1,
-        imported_by {get_integer_type()},
-        FOREIGN KEY (imported_by) REFERENCES users(id)
-    )
-    ''')
+    # Create classification_import_data table for imported statistics (AFTER imported_files)
+    try:
+        print("Creating classification_import_data table...")
+        cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS classification_import_data (
+            id {get_id_type()},
+            age {get_integer_type()} NOT NULL,
+            gender {get_text_type()} NOT NULL,
+            category {get_text_type()} NOT NULL,
+            imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            file_id {get_integer_type()},
+            FOREIGN KEY (file_id) REFERENCES imported_files(id)
+        )
+        ''')
+        print("classification_import_data table created successfully")
+    except Exception as e:
+        print(f"Error creating classification_import_data table: {e}")
+        raise e
     
     # Create otp_verification table
     cursor.execute(f'''
