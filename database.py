@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Detect if PostgreSQL is available (Railway provides these env vars)
-USE_POSTGRES = all(os.environ.get(key) for key in ['PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'])
+USE_POSTGRES = os.environ.get('DATABASE_URL') or all(os.environ.get(key) for key in ['PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'])
 
 if USE_POSTGRES:
     import psycopg2
@@ -32,13 +32,18 @@ def convert_to_philippines_time(timestamp_str):
 def get_db_connection():
     """Get database connection (PostgreSQL or SQLite)."""
     if USE_POSTGRES:
-        conn = psycopg2.connect(
-            host=os.environ.get('PGHOST'),
-            port=os.environ.get('PGPORT', 5432),
-            database=os.environ.get('PGDATABASE'),
-            user=os.environ.get('PGUSER'),
-            password=os.environ.get('PGPASSWORD')
-        )
+        # Try DATABASE_URL first (Railway's preferred method)
+        if os.environ.get('DATABASE_URL'):
+            conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        else:
+            # Fallback to individual variables
+            conn = psycopg2.connect(
+                host=os.environ.get('PGHOST'),
+                port=os.environ.get('PGPORT', 5432),
+                database=os.environ.get('PGDATABASE'),
+                user=os.environ.get('PGUSER'),
+                password=os.environ.get('PGPASSWORD')
+            )
         return conn
     else:
         conn = sqlite3.connect(DB_PATH)
