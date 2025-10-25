@@ -276,8 +276,15 @@ def init_db():
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, ('admin', admin_password_hash, 'admin@anemocheck.com', 'System', 'Administrator', 1))
                 
-                # Get the admin user ID
-                admin_user_id = cursor.lastrowid
+                # Get the admin user ID (PostgreSQL doesn't use lastrowid)
+                if USE_POSTGRES:
+                    # For PostgreSQL, get the ID from the inserted row
+                    execute_sql(cursor, "SELECT id FROM users WHERE username = ?", ('admin',))
+                    admin_user = cursor.fetchone()
+                    admin_user_id = admin_user['id']
+                else:
+                    # For SQLite, use lastrowid
+                    admin_user_id = cursor.lastrowid
                 
                 # Create medical_data entry for admin
                 execute_sql(cursor, "INSERT INTO medical_data (user_id) VALUES (?)", (admin_user_id,))
