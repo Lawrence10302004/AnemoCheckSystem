@@ -38,7 +38,8 @@ import base64
 
 import database as db
 import simple_chat
-from email_service import send_result_email_brevo, send_otp_email_brevo_brevo
+from email_service import send_result_email_brevo, send_otp_email_brevo
+
 
 from anemia_model import AnemiaCBCModel
 import joblib
