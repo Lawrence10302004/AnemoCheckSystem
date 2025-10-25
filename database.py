@@ -45,6 +45,8 @@ def get_db_connection():
                 user=os.environ.get('PGUSER'),
                 password=os.environ.get('PGPASSWORD')
             )
+        # Use RealDictCursor to return dictionaries instead of tuples
+        conn.cursor_factory = RealDictCursor
         return conn
     else:
         conn = sqlite3.connect(DB_PATH)
