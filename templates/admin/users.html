@@ -107,7 +107,6 @@
                                     <th>Medical ID</th>
                                     <th>Role</th>
                                     <th>Created</th>
-                                    <th>Last Login</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -129,7 +128,6 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ user.created_at }}</td>
-                                    <td>{{ user.last_login or 'Never' }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" 
