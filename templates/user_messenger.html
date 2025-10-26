@@ -761,7 +761,7 @@ function displayMessages(adminId, messages) {
         messageDiv.innerHTML = `
             <div class="message-bubble">
                 <div>${message.message_text}</div>
-                <div class="message-time">${new Date(message.created_at).toLocaleString()}</div>
+                <div class="message-time">${message.created_at}</div>
             </div>
         `;
         

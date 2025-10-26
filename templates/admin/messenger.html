@@ -54,7 +54,7 @@
                             <div class="conversation-time">
                                 <small class="text-muted">
                                     {% if conversation.last_message_time %}
-                                        {{ conversation.last_message_time[:16] }}
+                                        {{ conversation.last_message_time }}
                                     {% endif %}
                                 </small>
                             </div>
@@ -717,7 +717,7 @@ function displayMessages(userId, messages) {
         messageDiv.innerHTML = `
             <div class="message-bubble">
                 <div>${message.message_text}</div>
-                <div class="message-time">${new Date(message.created_at).toLocaleString()}</div>
+                <div class="message-time">${message.created_at}</div>
             </div>
         `;
         
