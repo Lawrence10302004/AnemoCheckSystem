@@ -46,8 +46,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% if records %}
-                        {% for record in records %}
+                    {% if history_data.records %}
+                        {% for record in history_data.records %}
                         <tr class="
                             {% if record.predicted_class == 'Normal' %}table-success
                             {% elif record.predicted_class == 'Mild' %}table-warning
@@ -110,6 +110,52 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Pagination -->
+        {% if history_data.total_pages > 1 %}
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted">
+                Showing {{ ((history_data.page - 1) * history_data.per_page) + 1 }} to 
+                {{ history_data.page * history_data.per_page if history_data.page * history_data.per_page < history_data.total else history_data.total }} 
+                of {{ history_data.total }} classifications
+            </div>
+            <nav aria-label="Classification history pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if history_data.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('history', page=history_data.prev_num) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in range(1, history_data.total_pages + 1) %}
+                        {% if page_num == history_data.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% elif page_num <= 3 or page_num > history_data.total_pages - 3 or (page_num >= history_data.page - 1 and page_num <= history_data.page + 1) %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('history', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% elif page_num == 4 and history_data.page > 5 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% elif page_num == history_data.total_pages - 3 and history_data.page < history_data.total_pages - 4 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if history_data.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('history', page=history_data.next_num) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -122,7 +168,7 @@
                 <h5 class="card-title mb-0">Hemoglobin Trend Visualization</h5>
             </div>
             <div class="card-body">
-                {% if records %}
+                {% if history_data.records %}
                     <canvas id="historyChart" style="width:100%; min-height:400px;"></canvas>
                 {% else %}
                     <div class="alert alert-info w-100 text-center">
@@ -140,15 +186,15 @@
                 <h5 class="card-title mb-0">Statistics</h5>
             </div>
             <div class="card-body">
-                {% if records %}
+                {% if history_data.records %}
                 <div class="row text-center">
                     <div class="col-6 mb-3">
                         <div class="small text-muted">Total Records</div>
-                        <div class="fs-4 fw-bold">{{ records|length }}</div>
+                        <div class="fs-4 fw-bold">{{ history_data.total }}</div>
                     </div>
                     <div class="col-6 mb-3">
                         <div class="small text-muted">Latest Hemoglobin</div>
-                        <div class="fs-4 fw-bold">{{ records[0].hgb }} g/dL</div>
+                        <div class="fs-4 fw-bold">{{ history_data.records[0].hgb }} g/dL</div>
                     </div>
                 </div>
                 <hr>
@@ -177,7 +223,7 @@
 
 {% block scripts %}
 <!-- JSON data placed in a non-JS script tag so editors/linters won't treat Jinja tokens as JS syntax -->
-<script id="records-data" type="application/json">{{ records|tojson }}</script>
+<script id="records-data" type="application/json">{{ history_data.records|tojson }}</script>
 
 <script>
 // Attach export handler

@@ -567,6 +567,60 @@ def add_classification_record(*args, **kwargs):
 
 
 
+def get_user_classification_history_paginated(user_id, page=1, per_page=5):
+    """Get classification history for a specific user with pagination."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Calculate offset
+    if page < 1:
+        page = 1
+    offset = (page - 1) * per_page
+    
+    # Get total count for this user
+    if USE_POSTGRES:
+        execute_sql(cursor, "SELECT COUNT(*) as total FROM classification_history WHERE user_id = %s", (user_id,))
+    else:
+        execute_sql(cursor, "SELECT COUNT(*) as total FROM classification_history WHERE user_id = ?", (user_id,))
+    total = cursor.fetchone()['total']
+    
+    # Get paginated results for this user
+    if USE_POSTGRES:
+        execute_sql(cursor, """
+            SELECT * FROM classification_history 
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT %s OFFSET %s
+        """, (user_id, per_page, offset))
+    else:
+        execute_sql(cursor, """
+            SELECT * FROM classification_history 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """, (user_id, per_page, offset))
+    
+    records = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    # Calculate pagination info
+    total_pages = (total + per_page - 1) // per_page
+    has_prev = page > 1
+    has_next = page < total_pages
+    
+    return {
+        'records': records,
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'total_pages': total_pages,
+        'has_prev': has_prev,
+        'has_next': has_next,
+        'prev_num': page - 1 if has_prev else None,
+        'next_num': page + 1 if has_next else None
+    }
+
+
 def get_user_classification_history(user_id, limit=10):
     """Get classification history for a specific user."""
     conn = get_db_connection()

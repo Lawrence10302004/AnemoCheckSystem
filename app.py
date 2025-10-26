@@ -577,10 +577,15 @@ def medical_data():
 @login_required
 def history():
     """User classification history page."""
-    # Get user's classification history
-    records = db.get_user_classification_history(current_user.id, limit=50)
+    # Get page parameter for pagination
+    page = request.args.get('page', 1, type=int)
+    if page < 1:
+        page = 1
     
-    return render_template('history.html', records=records)
+    # Get user's classification history with pagination
+    history_data = db.get_user_classification_history_paginated(current_user.id, page=page, per_page=5)
+    
+    return render_template('history.html', history_data=history_data)
 
 
 @app.route('/classify', methods=['POST'])

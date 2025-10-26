@@ -331,37 +331,9 @@
                             <div class="mb-3">
                                 <strong>Database:</strong> SQLite
                             </div>
-                            <div class="mb-3">
-                                <strong>Last Backup:</strong> Today
-                            </div>
                         </div>
                     </div>
 
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-outline-primary" onclick="backupDatabase()">
-                                    <i class="fas fa-database me-1"></i>
-                                    Backup Database
-                                </button>
-                                <button type="button" class="btn btn-outline-warning" onclick="clearCache()">
-                                    <i class="fas fa-broom me-1"></i>
-                                    Clear Cache
-                                </button>
-                                <button type="button" class="btn btn-outline-info" onclick="testEmail()">
-                                    <i class="fas fa-envelope me-1"></i>
-                                    Test Email
-                                </button>
-                                <button type="button" class="btn btn-outline-danger" onclick="restartSystem()">
-                                    <i class="fas fa-power-off me-1"></i>
-                                    Restart System
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
@@ -402,27 +374,6 @@ function resetSettings() {
     }
 }
 
-function backupDatabase() {
-    // This would typically create a database backup
-    alert('Database backup functionality would be implemented here.');
-}
-
-function clearCache() {
-    // This would typically clear system cache
-    alert('Cache clearing functionality would be implemented here.');
-}
-
-function testEmail() {
-    // This would typically send a test email
-    alert('Email test functionality would be implemented here.');
-}
-
-function restartSystem() {
-    if (confirm('Are you sure you want to restart the system? This will cause temporary downtime.')) {
-        // This would typically restart the system
-        alert('System restart functionality would be implemented here.');
-    }
-}
 
 // Check if Brevo API key is saved and update UI accordingly
 document.addEventListener('DOMContentLoaded', function() {
