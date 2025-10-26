@@ -302,8 +302,8 @@ function displayUserDetails(data) {
     
     const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'N/A';
     const role = user.is_admin ? 'Administrator' : 'User';
-    const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
-    const createdAt = new Date(user.created_at).toLocaleString();
+    const lastLogin = user.last_login || 'Never';
+    const createdAt = user.created_at;
     
     let medicalInfoHtml = '';
     if (medicalData) {
@@ -341,7 +341,7 @@ function displayUserDetails(data) {
                     <tbody>
                         ${classificationHistory.map(record => `
                             <tr>
-                                <td>${new Date(record.created_at).toLocaleDateString()}</td>
+                                <td>${record.created_at}</td>
                                 <td>${record.hgb} g/dL</td>
                                 <td><span class="badge ${record.predicted_class === 'Anemic' ? 'bg-danger' : 'bg-success'}">${record.predicted_class}</span></td>
                                 <td>${(record.confidence * 100).toFixed(1)}%</td>
@@ -363,7 +363,7 @@ function displayUserDetails(data) {
                     <div class="list-group-item">
                         <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1">Admin Conversation</h6>
-                            <small>${conv.last_message_time ? new Date(conv.last_message_time).toLocaleDateString() : 'N/A'}</small>
+                            <small>${conv.last_message_time || 'N/A'}</small>
                         </div>
                         <p class="mb-1">${conv.last_message ? conv.last_message.substring(0, 100) + (conv.last_message.length > 100 ? '...' : '') : 'No messages'}</p>
                         <small>Messages: ${conv.message_count || 0}</small>

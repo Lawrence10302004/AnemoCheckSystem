@@ -1433,6 +1433,20 @@ def admin_user_details(user_id):
     # Get user's chat conversations
     conversations = simple_chat.get_user_conversations(user_id, is_admin=False)
     
+    # Format timestamps with AM/PM
+    formatted_created_at = format_philippines_time_ampm(user_data['created_at'])
+    formatted_last_login = format_philippines_time_ampm(user_data['last_login']) if user_data['last_login'] else None
+    
+    # Format classification history timestamps
+    for record in classification_history:
+        if 'created_at' in record:
+            record['created_at'] = format_philippines_time_ampm(record['created_at'])
+    
+    # Format conversation timestamps
+    for conversation in conversations:
+        if 'last_message_time' in conversation and conversation['last_message_time']:
+            conversation['last_message_time'] = format_philippines_time_ampm(conversation['last_message_time'])
+    
     # Prepare response data
     user_details = {
         'user': {
@@ -1445,8 +1459,8 @@ def admin_user_details(user_id):
             'date_of_birth': user_data['date_of_birth'],
             'medical_id': user_data['medical_id'],
             'is_admin': user_data['is_admin'],
-            'created_at': user_data['created_at'],
-            'last_login': user_data['last_login']
+            'created_at': formatted_created_at,
+            'last_login': formatted_last_login
         },
         'medical_data': medical_data,
         'classification_history': classification_history,
@@ -2278,6 +2292,10 @@ def admin_classification_details(record_id):
     # Convert to dict
     record = dict(record)
     
+    # Format timestamp with AM/PM
+    if 'created_at' in record:
+        record['created_at'] = format_philippines_time_ampm(record['created_at'])
+    
     # Prepare response data
     classification_details = {
         'record': record,
@@ -2468,6 +2486,9 @@ def admin_classification_filtered_data():
         record_dict = dict(record)
         # Format confidence as percentage
         record_dict['confidence_percentage'] = round(record_dict['confidence'] * 100, 2)
+        # Format timestamp with AM/PM
+        if 'created_at' in record_dict:
+            record_dict['created_at'] = format_philippines_time_ampm(record_dict['created_at'])
         filtered_records.append(record_dict)
     
     return jsonify({

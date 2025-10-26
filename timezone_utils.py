@@ -34,19 +34,17 @@ def parse_philippines_time(timestamp_str):
                 # ISO format with T
                 dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
             else:
-                # SQLite format
+                # SQLite format - assume it's already in Philippines time
                 dt = datetime.fromisoformat(timestamp_str)
         else:
             # Already a datetime object
             dt = timestamp_str
         
-        # Convert to Philippines timezone
+        # If no timezone info, assume it's already in Philippines time
         if dt.tzinfo is None:
-            # Assume UTC if no timezone info
-            dt = dt.replace(tzinfo=ZoneInfo('UTC'))
+            dt = dt.replace(tzinfo=PH_TZ)
         
-        ph_time = dt.astimezone(PH_TZ)
-        return ph_time
+        return dt
     except Exception as e:
         print(f"Error parsing timestamp: {e}")
         return None
