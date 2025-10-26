@@ -34,16 +34,18 @@ def parse_philippines_time(timestamp_str):
                 # ISO format with T
                 dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
             else:
-                # SQLite format - check if it has microseconds (like '2025-10-23 22:01:40.381275')
-                # This indicates it came from Python datetime.now() which is UTC
-                if '.' in timestamp_str:
-                    # Has microseconds - this is UTC from the database
-                    dt = datetime.fromisoformat(timestamp_str)
+                # SQLite format - check if it has microseconds or looks like UTC
+                dt = datetime.fromisoformat(timestamp_str)
+                
+                # Check if it has microseconds (like '2025-10-23 22:01:40.381275')
+                # OR if it's in a UTC-like hour range (5-23) which suggests UTC
+                # Based on user feedback: 5 PM UTC should be 1 AM PH time (+8 hours)
+                if '.' in timestamp_str or dt.hour >= 5:
+                    # Has microseconds OR hour >= 5 - this is likely UTC from the database
                     dt = dt.replace(tzinfo=ZoneInfo('UTC'))
                     dt = dt.astimezone(PH_TZ)
                 else:
-                    # No microseconds - assume it's already in Philippines time
-                    dt = datetime.fromisoformat(timestamp_str)
+                    # No microseconds and hour < 5 - assume it's already in Philippines time
                     dt = dt.replace(tzinfo=PH_TZ)
         else:
             # Already a datetime object
