@@ -15,7 +15,7 @@ import logging
 import random
 import string
 from datetime import datetime, timedelta
-from timezone_utils import get_philippines_time, format_philippines_time, get_philippines_time_for_db, get_philippines_time_plus_minutes
+from timezone_utils import get_philippines_time, format_philippines_time, get_philippines_time_for_db, get_philippines_time_plus_minutes, format_philippines_time_ampm
 # from email.mime.text import MIMEText
 # from email.mime.multipart import MIMEMultipart
 
@@ -584,6 +584,11 @@ def history():
     
     # Get user's classification history with pagination
     history_data = db.get_user_classification_history_paginated(current_user.id, page=page, per_page=5)
+    
+    # Format timestamps with AM/PM for each record
+    for record in history_data['records']:
+        if 'created_at' in record:
+            record['created_at'] = format_philippines_time_ampm(record['created_at'])
     
     return render_template('history.html', history_data=history_data)
 
@@ -1198,6 +1203,10 @@ def result(record_id):
 
     record["definition"] = cbc_results_summary[predicted_label]
     
+    # Format the created_at timestamp with AM/PM
+    if "created_at" in record:
+        record["created_at"] = format_philippines_time_ampm(record["created_at"])
+    
     return render_template(
         'result.html',
         record=record,
@@ -1283,6 +1292,13 @@ def admin_users():
     if page < 1:
         page = 1
     users_data = db.get_users_paginated(page=page, per_page=5)
+    
+    # Format timestamps with AM/PM for each user record
+    for user in users_data['records']:
+        if 'created_at' in user:
+            user['created_at'] = format_philippines_time_ampm(user['created_at'])
+        if 'last_login' in user and user['last_login']:
+            user['last_login'] = format_philippines_time_ampm(user['last_login'])
     
     return render_template('admin/users.html', users_data=users_data)
 
@@ -1477,6 +1493,11 @@ def admin_history():
     
     # Get paginated classification history
     history_data = db.get_classification_history_paginated(page=page, per_page=5)
+    
+    # Format timestamps with AM/PM for each record
+    for record in history_data['records']:
+        if 'created_at' in record:
+            record['created_at'] = format_philippines_time_ampm(record['created_at'])
     
     # Get system statistics (same as dashboard)
     stats = db.get_statistics()
@@ -2130,6 +2151,9 @@ def export_users():
     
     # Write user data
     for user in users:
+        # Format timestamps with AM/PM
+        created_at = format_philippines_time_ampm(user['created_at'])
+        last_login = format_philippines_time_ampm(user['last_login']) if user['last_login'] else ''
         writer.writerow([
             user['id'],
             user['username'],
@@ -2140,8 +2164,8 @@ def export_users():
             user['date_of_birth'] or '',
             user['medical_id'] or '',
             'Yes' if user['is_admin'] else 'No',
-            user['created_at'],
-            user['last_login'] or ''
+            created_at,
+            last_login
         ])
     
     csv_content = output.getvalue()
@@ -2184,11 +2208,13 @@ def export_classification_history():
     
     # Write record data
     for record in records:
+        # Format timestamp with AM/PM
+        formatted_date = format_philippines_time_ampm(record['created_at'])
         writer.writerow([
             record['id'],
             record['user_id'],
             record['username'],
-            record['created_at'],
+            formatted_date,
             record['wbc'],
             record['rbc'],
             record['hgb'],
@@ -2488,6 +2514,11 @@ def chat():
     # Get user conversations
     conversations = simple_chat.get_user_conversations(current_user.id, is_admin=False)
     
+    # Format timestamps with AM/PM
+    for conversation in conversations:
+        if 'last_message_time' in conversation and conversation['last_message_time']:
+            conversation['last_message_time'] = format_philippines_time_ampm(conversation['last_message_time'])
+    
     return render_template('user_messenger.html', 
                          conversations=conversations,
                          current_user=current_user)
@@ -2506,6 +2537,12 @@ def admin_messenger():
     
     # Get admin conversations for history
     conversations = simple_chat.get_user_conversations(current_user.id, is_admin=True)
+    
+    # Format timestamps with AM/PM
+    for conversation in conversations:
+        if 'last_message_time' in conversation and conversation['last_message_time']:
+            conversation['last_message_time'] = format_philippines_time_ampm(conversation['last_message_time'])
+    
     logger.info(f"Admin messenger: Found {len(conversations)} conversations")
     
     return render_template('admin/messenger.html', 
@@ -2568,6 +2605,12 @@ def admin_get_messages(conversation_id):
     logger.info(f"Admin get messages: conversation_id={conversation_id}, admin_id={current_user.id}")
     
     messages = simple_chat.get_conversation_messages(conversation_id)
+    
+    # Format timestamps with AM/PM
+    for message in messages:
+        if 'created_at' in message:
+            message['created_at'] = format_philippines_time_ampm(message['created_at'])
+    
     logger.info(f"Admin get messages result: {len(messages)} messages found")
     
     return jsonify({
@@ -2733,6 +2776,12 @@ def user_get_messages(conversation_id):
     logger.info(f"User get messages: conversation_id={conversation_id}, user_id={current_user.id}")
     
     messages = simple_chat.get_conversation_messages(conversation_id)
+    
+    # Format timestamps with AM/PM
+    for message in messages:
+        if 'created_at' in message:
+            message['created_at'] = format_philippines_time_ampm(message['created_at'])
+    
     logger.info(f"User get messages result: {len(messages)} messages found")
     
     return jsonify({
@@ -3013,8 +3062,10 @@ def export_my_classification_history():
                      'NEU (%)', 'LYM (%)', 'MON (%)', 'EOS (%)', 'BAS (%)', 'IGR (%)', 'Classification', 'Confidence', 'Notes'])
 
     for record in records:
+        # Format timestamp with AM/PM
+        formatted_date = format_philippines_time_ampm(record.get('created_at', ''))
         writer.writerow([
-            record.get('created_at', ''),
+            formatted_date,
             record.get('wbc', ''),
             record.get('rbc', ''),
             record.get('hgb', ''),

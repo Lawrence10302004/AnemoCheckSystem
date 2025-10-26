@@ -58,6 +58,13 @@ def format_philippines_time_display(timestamp_str):
         return ph_time.strftime('%Y-%m-%d %H:%M:%S %Z')
     return timestamp_str
 
+def format_philippines_time_ampm(timestamp_str):
+    """Format timestamp for display in Philippines time with AM/PM."""
+    ph_time = parse_philippines_time(timestamp_str)
+    if ph_time:
+        return ph_time.strftime('%Y-%m-%d %I:%M:%S %p')
+    return timestamp_str
+
 def get_philippines_time_plus_minutes(minutes):
     """Get Philippines time plus specified minutes."""
     return get_philippines_time() + timedelta(minutes=minutes)

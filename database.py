@@ -27,8 +27,8 @@ else:
 
 def convert_to_philippines_time(timestamp_str):
     """Convert timestamp to Philippines timezone (UTC+8)"""
-    from timezone_utils import format_philippines_time_display
-    return format_philippines_time_display(timestamp_str)
+    from timezone_utils import format_philippines_time_ampm
+    return format_philippines_time_ampm(timestamp_str)
 
 def get_db_connection():
     """Get database connection (PostgreSQL or SQLite)."""
