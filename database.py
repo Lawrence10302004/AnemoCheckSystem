@@ -110,7 +110,7 @@ def init_db():
             date_of_birth {get_text_type()},
             medical_id {get_text_type()} UNIQUE,
             is_admin {get_integer_type()} DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP,
             last_login TIMESTAMP
         )
         ''')
@@ -342,15 +342,20 @@ def create_user(username, password=None, email=None, first_name=None, last_name=
         # Use provided password_hash or generate from password
         if password_hash is None:
             password_hash = generate_password_hash(password)
+        
+        # Get Philippines time for created_at
+        from timezone_utils import get_philippines_time_for_db
+        created_at = get_philippines_time_for_db()
+        
         execute_sql(cursor,
             """
             INSERT INTO users 
             (username, password_hash, email, first_name, last_name, gender, 
-             date_of_birth, medical_id, is_admin)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             date_of_birth, medical_id, is_admin, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (username, password_hash, email, first_name, last_name, gender, 
-             date_of_birth, normalized_medical_id, is_admin)
+             date_of_birth, normalized_medical_id, is_admin, created_at)
         )
         conn.commit()
         user_id = cursor.lastrowid

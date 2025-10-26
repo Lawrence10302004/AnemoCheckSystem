@@ -219,6 +219,29 @@
         </div>
     </div>
 </div>
+<style>
+    /* Improve table layout for date column */
+    #historyTable th:first-child,
+    #historyTable td:first-child {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+        min-width: 140px;
+    }
+    
+    /* Ensure consistent row height */
+    #historyTable tbody tr {
+        vertical-align: middle;
+    }
+    
+    /* Compact cell padding for better space utilization */
+    #historyTable td {
+        padding: 0.5rem;
+        line-height: 1.2;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
