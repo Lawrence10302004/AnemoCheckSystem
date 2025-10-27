@@ -3411,6 +3411,32 @@ def send_password_reset_otp_email(email, otp_code):
         return True
 
 
+# TEMPORARY ONE-TIME ROUTE TO RESET ADMIN PASSWORD
+# DELETE THIS AFTER USE
+@app.route('/reset-admin-password-temp', methods=['POST'])
+def reset_admin_password_temp():
+    """Temporary one-time route to reset admin password to admin123"""
+    try:
+        # Security: Require a secret token to prevent unauthorized use
+        secret_token = 'temp_reset_2024'
+        if request.json and request.json.get('token') == secret_token:
+            from werkzeug.security import generate_password_hash
+            password_hash = generate_password_hash('admin123')
+            
+            conn = db.get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('UPDATE users SET password_hash = ? WHERE username = ?', (password_hash, 'admin'))
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'success': True, 'message': 'Admin password reset to: admin123'})
+        else:
+            return jsonify({'success': False, 'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     socketio.run(app, host='0.0.0.0', port=port, debug=True)
