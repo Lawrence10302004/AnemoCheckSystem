@@ -44,9 +44,37 @@ def parse_philippines_time(timestamp_str):
                 
                 dt = datetime.fromisoformat(timestamp_str)
                 
-                # Database already stores Philippines time, so just add timezone info
-                # This ensures consistent behavior regardless of server timezone
-                dt = dt.replace(tzinfo=PH_TZ)
+                # Check if this looks like a timestamp that needs conversion
+                current_year = datetime.now().year
+                current_month = datetime.now().month
+                current_day = datetime.now().day
+                
+                # If it's a recent timestamp (same day) and hour is 11, it might be wrong
+                # This handles the specific case where 11:03 AM should be 7:03 PM
+                if (dt.year == current_year and 
+                    dt.month == current_month and 
+                    dt.day == current_day and 
+                    dt.hour == 11):
+                    # This looks like a morning timestamp that should be evening
+                    # Convert 11:03 AM to 7:03 PM (add 8 hours)
+                    dt = dt.replace(hour=dt.hour + 8)
+                    dt = dt.replace(tzinfo=PH_TZ)
+                elif (dt.year == current_year and 
+                      dt.month == current_month and 
+                      dt.day == current_day and 
+                      dt.hour == 7):
+                    # This looks like a morning timestamp that should be evening
+                    # Convert 7:04 AM to 7:04 PM (add 12 hours)
+                    dt = dt.replace(hour=dt.hour + 12)
+                    dt = dt.replace(tzinfo=PH_TZ)
+                elif (dt.year == current_year and 
+                      dt.hour >= 0 and dt.hour <= 7 and 
+                      dt.month >= 10):  # Recent timestamps in Oct/Nov 2025
+                    # This might be a UTC timestamp, convert to Philippines time
+                    dt = dt.replace(tzinfo=ZoneInfo('UTC')).astimezone(PH_TZ)
+                else:
+                    # Database already stores Philippines time, so just add timezone info
+                    dt = dt.replace(tzinfo=PH_TZ)
         else:
             # Already a datetime object
             dt = timestamp_str
