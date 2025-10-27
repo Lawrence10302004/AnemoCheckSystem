@@ -511,7 +511,7 @@ def add_classification_record(*args, **kwargs):
     if user_id is None:
         raise TypeError('user_id is required')
 
-    # Philippines time string
+    # Philippines time string - store Philippines time directly in database
     ph_now = datetime.datetime.now(ZoneInfo('Asia/Manila')).strftime('%Y-%m-%d %H:%M:%S')
 
     conn = get_db_connection()

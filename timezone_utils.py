@@ -23,8 +23,10 @@ def format_philippines_time(dt=None):
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 def get_philippines_time_for_db():
-    """Get Philippines time formatted for database storage."""
-    return get_philippines_time().strftime('%Y-%m-%d %H:%M:%S')
+    """Get Philippines time formatted for database storage (store Philippines time in DB)."""
+    # Store Philippines time directly in database for consistency
+    ph_time = datetime.now(PH_TZ)
+    return ph_time.strftime('%Y-%m-%d %H:%M:%S')
 
 def parse_philippines_time(timestamp_str):
     """Parse timestamp string and convert to Philippines time."""
@@ -34,19 +36,13 @@ def parse_philippines_time(timestamp_str):
                 # ISO format with T
                 dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
             else:
-                # SQLite format - check if it has microseconds or looks like UTC
+                # SQLite format - database stores Philippines time directly
+                # No conversion needed, just add timezone info
                 dt = datetime.fromisoformat(timestamp_str)
                 
-                # Check if it has microseconds (like '2025-10-23 22:01:40.381275')
-                # OR if it's in a UTC-like hour range (5-23) which suggests UTC
-                # Based on user feedback: 5 PM UTC should be 1 AM PH time (+8 hours)
-                if '.' in timestamp_str or dt.hour >= 5:
-                    # Has microseconds OR hour >= 5 - this is likely UTC from the database
-                    dt = dt.replace(tzinfo=ZoneInfo('UTC'))
-                    dt = dt.astimezone(PH_TZ)
-                else:
-                    # No microseconds and hour < 5 - assume it's already in Philippines time
-                    dt = dt.replace(tzinfo=PH_TZ)
+                # Database already stores Philippines time, so just add timezone info
+                # This ensures consistent behavior regardless of server timezone
+                dt = dt.replace(tzinfo=PH_TZ)
         else:
             # Already a datetime object
             dt = timestamp_str
