@@ -70,10 +70,14 @@ def create_conversation(user_id, admin_id=None):
     cursor = conn.cursor()
     
     try:
+        # Use Philippines time for timestamp
+        from timezone_utils import get_philippines_time_for_db
+        ph_timestamp = get_philippines_time_for_db()
+        
         cursor.execute('''
-            INSERT INTO chat_conversations (user_id, admin_id)
-            VALUES (?, ?)
-        ''', (user_id, admin_id))
+            INSERT INTO chat_conversations (user_id, admin_id, created_at)
+            VALUES (?, ?, ?)
+        ''', (user_id, admin_id, ph_timestamp))
         
         conversation_id = cursor.lastrowid
         conn.commit()
@@ -89,10 +93,14 @@ def send_message(conversation_id, sender_id, message_text):
     cursor = conn.cursor()
     
     try:
+        # Use Philippines time for timestamp
+        from timezone_utils import get_philippines_time_for_db
+        ph_timestamp = get_philippines_time_for_db()
+        
         cursor.execute('''
-            INSERT INTO chat_messages (conversation_id, sender_id, message_text)
-            VALUES (?, ?, ?)
-        ''', (conversation_id, sender_id, message_text))
+            INSERT INTO chat_messages (conversation_id, sender_id, message_text, created_at)
+            VALUES (?, ?, ?, ?)
+        ''', (conversation_id, sender_id, message_text, ph_timestamp))
         
         message_id = cursor.lastrowid
         conn.commit()
