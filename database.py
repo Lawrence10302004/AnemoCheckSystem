@@ -6,6 +6,7 @@ Supports both PostgreSQL (Railway) and SQLite (local development).
 """
 
 import os
+import shutil
 import datetime
 from zoneinfo import ZoneInfo
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,10 +21,49 @@ if USE_POSTGRES:
     DB_PATH = None  # Not used for PostgreSQL
 else:
     import sqlite3
-    DB_PATH = os.environ.get('DATABASE_PATH', 'anemia_classification.db')
-    if DB_PATH != 'anemia_classification.db':
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    print("Using SQLite database (local)")
+
+    # Resolve SQLite path with strong preference for a mounted volume in Railway
+    # Priority order:
+    # 1) DATABASE_PATH (explicit)
+    # 2) RAILWAY_VOLUME_MOUNT_PATH (official env when a volume is mounted)
+    # 3) Heuristic for Railway default mount at /data
+    # 4) Local file in project dir (development)
+    default_local_db = 'anemia_classification.db'
+    env_db_path = os.environ.get('DATABASE_PATH')
+    volume_mount = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')
+    running_on_railway = any(k in os.environ for k in [
+        'RAILWAY_PROJECT_ID', 'RAILWAY_ENVIRONMENT', 'RAILWAY_STATIC_URL', 'RAILWAY_GIT_COMMIT_SHA'
+    ])
+
+    if env_db_path:
+        DB_PATH = env_db_path
+    elif volume_mount:
+        DB_PATH = os.path.join(volume_mount, 'anemocheck', default_local_db)
+    elif running_on_railway:
+        # Common default mount path for Railway volumes
+        DB_PATH = os.path.join('/data', 'anemocheck', default_local_db)
+    else:
+        DB_PATH = default_local_db
+
+    # Ensure directory exists if using an absolute/volume path
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except Exception:
+            # Directory creation might fail on read-only environments; ignore here
+            pass
+
+    # If we're targeting a volume path and it's empty, but a local dev DB exists,
+    # copy it once to preserve data and schema without changing any columns.
+    try:
+        if DB_PATH != default_local_db and not os.path.exists(DB_PATH) and os.path.exists(default_local_db):
+            shutil.copy2(default_local_db, DB_PATH)
+    except Exception as _e:
+        # Non-fatal: if copy fails we will initialize a fresh DB below
+        pass
+
+    print(f"Using SQLite database at: {DB_PATH}")
 
 def convert_to_philippines_time(timestamp_str):
     """Convert timestamp to Philippines timezone (UTC+8)"""
