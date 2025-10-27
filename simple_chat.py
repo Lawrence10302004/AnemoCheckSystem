@@ -7,8 +7,25 @@ import os
 from datetime import datetime
 
 def get_db_connection():
-    """Get database connection."""
-    db_path = os.path.join(os.path.dirname(__file__), 'anemia_classification.db')
+    """Get database connection using the same path resolution as main app."""
+    # Use the same database path resolution logic as database.py
+    default_local_db = 'anemia_classification.db'
+    env_db_path = os.environ.get('DATABASE_PATH')
+    volume_mount = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')
+    running_on_railway = any(k in os.environ for k in [
+        'RAILWAY_PROJECT_ID', 'RAILWAY_ENVIRONMENT', 'RAILWAY_STATIC_URL', 'RAILWAY_GIT_COMMIT_SHA'
+    ])
+
+    if env_db_path:
+        db_path = env_db_path
+    elif volume_mount:
+        db_path = os.path.join(volume_mount, 'anemocheck', default_local_db)
+    elif running_on_railway:
+        # Common default mount path for Railway volumes
+        db_path = os.path.join('/data', 'anemocheck', default_local_db)
+    else:
+        db_path = default_local_db
+
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
