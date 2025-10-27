@@ -382,15 +382,20 @@ def create_user(username, password=None, email=None, first_name=None, last_name=
         # Use provided password_hash or generate from password
         if password_hash is None:
             password_hash = generate_password_hash(password)
+        
+        # Use Philippines time for created_at timestamp
+        from timezone_utils import get_philippines_time_for_db
+        ph_timestamp = get_philippines_time_for_db()
+        
         execute_sql(cursor,
             """
             INSERT INTO users 
             (username, password_hash, email, first_name, last_name, gender, 
-             date_of_birth, medical_id, is_admin)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             date_of_birth, medical_id, is_admin, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (username, password_hash, email, first_name, last_name, gender, 
-             date_of_birth, normalized_medical_id, is_admin)
+             date_of_birth, normalized_medical_id, is_admin, ph_timestamp)
         )
         conn.commit()
         user_id = cursor.lastrowid
