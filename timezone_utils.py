@@ -37,7 +37,11 @@ def parse_philippines_time(timestamp_str):
                 dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
             else:
                 # SQLite format - database stores Philippines time directly
-                # No conversion needed, just add timezone info
+                # Handle microseconds if present
+                if '.' in timestamp_str:
+                    # Remove microseconds for consistent parsing
+                    timestamp_str = timestamp_str.split('.')[0]
+                
                 dt = datetime.fromisoformat(timestamp_str)
                 
                 # Database already stores Philippines time, so just add timezone info
