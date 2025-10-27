@@ -3414,6 +3414,7 @@ def send_password_reset_otp_email(email, otp_code):
 # TEMPORARY ONE-TIME ROUTE TO RESET ADMIN PASSWORD
 # DELETE THIS AFTER USE
 @app.route('/reset-admin-password-temp', methods=['POST'])
+@csrf.exempt
 def reset_admin_password_temp():
     """Temporary one-time route to reset admin password to admin123"""
     try:
