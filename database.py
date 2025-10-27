@@ -1298,10 +1298,14 @@ def create_imported_file(filename, original_filename, total_records, imported_by
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Use Philippines time for timestamp
+    from timezone_utils import get_philippines_time_for_db
+    ph_timestamp = get_philippines_time_for_db()
+    
     cursor.execute('''
-        INSERT INTO imported_files (filename, original_filename, total_records, imported_by)
-        VALUES (?, ?, ?, ?)
-    ''', (filename, original_filename, total_records, imported_by))
+        INSERT INTO imported_files (filename, original_filename, total_records, imported_by, imported_at)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (filename, original_filename, total_records, imported_by, ph_timestamp))
     
     file_id = cursor.lastrowid
     conn.commit()

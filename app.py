@@ -1928,16 +1928,24 @@ def import_classification_data():
                 
                 # Check if file_id column exists, if not use old format
                 try:
+                    # Use Philippines time for timestamp
+                    from timezone_utils import get_philippines_time_for_db
+                    ph_timestamp = get_philippines_time_for_db()
+                    
                     cursor.execute('''
                         INSERT INTO classification_import_data (age, gender, category, file_id, imported_at)
-                        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                    ''', (age, gender, category, file_id))
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (age, gender, category, file_id, ph_timestamp))
                 except:
                     # Fallback to old format if file_id column doesn't exist
+                    # Use Philippines time for timestamp
+                    from timezone_utils import get_philippines_time_for_db
+                    ph_timestamp = get_philippines_time_for_db()
+                    
                     cursor.execute('''
                         INSERT INTO classification_import_data (age, gender, category, imported_at)
-                        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ''', (age, gender, category))
+                        VALUES (?, ?, ?, ?)
+                    ''', (age, gender, category, ph_timestamp))
                 
                 imported_count += 1
             except (ValueError, KeyError) as e:
