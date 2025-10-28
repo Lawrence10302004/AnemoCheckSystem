@@ -3110,7 +3110,7 @@ def export_my_classification_history():
             record.get('basophil') if record.get('basophil') is not None else '',
             record.get('immature_granulocytes') if record.get('immature_granulocytes') is not None else '',
             record.get('predicted_class', ''),
-            f"{round(float(record.get('confidence', 0))*100)}%" if record.get('confidence') is not None else '',
+            (f"{float(record.get('confidence')):.6f}" if record.get('confidence') is not None else ''),
             record.get('notes', '') or ''
         ])
 
