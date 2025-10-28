@@ -264,7 +264,7 @@
                                                     {% endif %}
                                                 </span>
                                             </td>
-                                            <td>{{ "%.1f"|format(record.confidence * 100) }}%</td>
+                                            <td>{{ (record.confidence * 100)|round(2, 'floor') }}%</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
