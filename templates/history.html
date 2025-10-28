@@ -79,7 +79,7 @@
                                     <span class="badge bg-danger">{{ record.predicted_class }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ (record.confidence * 100)|round|int }}%</td>
+                            <td>{{ (record.confidence * 100)|round(2, 'floor') }}%</td>
                             <td>
                                 {% if record.notes %}
                                     <button type="button" class="btn btn-sm btn-outline-secondary" 
